@@ -162,3 +162,25 @@ def astar(start, goal, pacman_map, original_map, frame):
 def recalculate_astar(current_position, end_position, pacman_map, original_map, frame):
     astar(current_position, end_position, pacman_map, original_map, frame)
     
+    
+    
+# def dstar(start, goal):
+#     onDeck = []
+    
+#     while len(onDeck) != 0:
+#         point = onDeck.pop(0)
+#         for neighbor in point.neighbors:
+#             if isRaise:
+#                 if neighbor.next_point == point:
+#                     neighbor.setnextpointandupdatecost(current_point)
+#                     bisort(onDeck, neighbor)
+#                 else:
+                    
+            
+            
+# def isRaise(point, new_cost):
+#     if point.cost > new_cost:
+#         for neighbor in point.neighbors:
+#             cost = point.calculate new cost
+#             if cost < point.cost:
+                

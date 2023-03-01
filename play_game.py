@@ -11,7 +11,6 @@ if __name__ == "__main__":
     pacman_map = Pacman_Map(M, N, (3, 4))
     i = 0
     
-    
     for m in range(M):
         for n in range(N):
             for (m1, n1) in [(m-1,n), (m+1,n), (m,n-1), (m,n+1)]:

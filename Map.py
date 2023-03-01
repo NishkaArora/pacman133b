@@ -108,6 +108,12 @@ class Map:
     def colorLocation(self, frame, location, color):
         x, y = location
         return cv2.rectangle(frame, (x*SF, y*SF), ((x+1)*SF, (y+1)*SF), color, -1)
+    
+    def colorLocationOutside(self, frame, location, color):
+        x, y = location
+        flipped = cv2.flip(frame, 0)
+        flipped  = cv2.rectangle(flipped, (x*SF, y*SF), ((x+1)*SF, (y+1)*SF), color, -1)
+        return cv2.flip(flipped, 0)
 
     def isWall(self, pt):
         x, y = pt 
@@ -175,7 +181,9 @@ if __name__ == "__main__":
         if kp == ord('e'):
             m.colorLocation()
 
-        cv2.imshow("Map", cv2.circle(m.generateImage(), (120, 720 - 120), 10, (255, 0, 0)))
+        f = m.generateImage()
+        f = m.colorLocationOutside(f, (3, 4), (255, 0, 0))
+        cv2.imshow("Map", f)
 
         if kp & 0xFF == ord('q'):
             break 

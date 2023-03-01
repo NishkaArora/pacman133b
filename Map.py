@@ -48,8 +48,10 @@ RED = (0, 0, 255)
 
 SF = 80
 
+# Please be in the correct folder (run it outside of pacman133b)
 pacmanSprite = cv2.imread('pacman133b/pacman.png', cv2.IMREAD_COLOR)
 ghostSprite = cv2.imread('pacman133b/ghost.png', cv2.IMREAD_COLOR)
+
 
 class Map:
     def __init__(self, spawnPoint):
@@ -155,9 +157,7 @@ if __name__ == "__main__":
         currentTime = time.time()
         if currentTime - lastUpdateGhost > GHOST_UPDATE_TIME:
             lastUpdateGhost += GHOST_UPDATE_TIME
-            m.moveGhost()
-            print("Moving Ghost")
-
+            # m.moveGhost()
 
         kp = cv2.waitKey(1)
         if kp == ord('w'):
@@ -172,8 +172,10 @@ if __name__ == "__main__":
         if kp == ord('d'):
             m.movePacman((1, 0))
 
-        cv2.imshow("Map", m.generateImage())
-        
+        if kp == ord('e'):
+            m.colorLocation()
+
+        cv2.imshow("Map", cv2.circle(m.generateImage(), (120, 720 - 120), 10, (255, 0, 0)))
 
         if kp & 0xFF == ord('q'):
             break 

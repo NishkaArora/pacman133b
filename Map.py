@@ -45,7 +45,7 @@ YELLOW = (0, 255, 255)
 
 SF = 60
 
-pacmanSprite = cv2.imread('pacman133b/pacman.png', cv2.IMREAD_COLOR)
+pacmanSprite = cv2.imread('pacman.png', cv2.IMREAD_COLOR)
 
 class Map:
     def __init__(self, spawnPoint):

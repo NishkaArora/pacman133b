@@ -107,6 +107,12 @@ class Map:
         x, y = location
         return cv2.rectangle(frame, (x*SF, y*SF), ((x+1)*SF, (y+1)*SF), color, -1)
 
+    def colorLocationOutside(self, frame, location, color):
+        x, y = location
+        flipped = cv2.flip(frame, 0)
+        flipped  = cv2.rectangle(flipped, (x*SF, y*SF), ((x+1)*SF, (y+1)*SF), color, -1)
+        return cv2.flip(flipped, 0)
+    
     def isWall(self, pt):
         x, y = pt 
         return self.wallMap[x, y] == 1

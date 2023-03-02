@@ -4,7 +4,8 @@ import cv2
 import numpy as np
 from Ghost import Ghost
 import time
-
+from occupancymap import OccupancyMap
+"""
 walls = ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
      'x               x               x               x',
      'x                x             x                x',
@@ -30,7 +31,7 @@ walls = ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
      'x           xxx                     x       xxxxx',
      'x          xxxxx                    x      xxxxxx',
      'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx']
-
+"""
 walls =['xxxxxxxxx',
      'x       x',
      'x xxxxx x',
@@ -49,8 +50,8 @@ RED = (0, 0, 255)
 SF = 80
 
 # Please be in the correct folder (run it outside of pacman133b)
-pacmanSprite = cv2.imread('pacman133b/pacman.png', cv2.IMREAD_COLOR)
-ghostSprite = cv2.imread('pacman133b/ghost.png', cv2.IMREAD_COLOR)
+pacmanSprite = cv2.imread('pacman.png', cv2.IMREAD_COLOR)
+ghostSprite = cv2.imread('ghost.png', cv2.IMREAD_COLOR)
 
 
 class Map:
@@ -156,6 +157,8 @@ if __name__ == "__main__":
     m = Map((3, 4))
     i = 0
 
+    prob_map = OccupancyMap(m)
+
     GHOST_UPDATE_TIME = 0.5 # 2 seconds for each ghost update
     lastUpdateGhost = time.time()
 
@@ -168,18 +171,22 @@ if __name__ == "__main__":
         kp = cv2.waitKey(1)
         if kp == ord('w'):
             m.movePacman((0, 1))
+            prob_map.update()
 
         if kp == ord('a'):
             m.movePacman((-1, 0))
+            prob_map.update()
 
         if kp == ord('s'):
             m.movePacman((0, -1))
+            prob_map.update()
 
         if kp == ord('d'):
             m.movePacman((1, 0))
+            prob_map.update()
 
-        if kp == ord('e'):
-            m.colorLocation()
+        #if kp == ord('e'):
+        #    m.colorLocation()
 
         f = m.generateImage()
         f = m.colorLocationOutside(f, (3, 4), (255, 0, 0))

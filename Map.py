@@ -31,22 +31,22 @@ walls = ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
      'x          xxxxx                    x      xxxxxx',
      'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx']
 
-walls =['xxxxxxxxx',
-     'x       x',
-     'x xxxxx x',
-     'x   x   x',
-     'x       x',
-     'x x x x x',
-     'x x x x x',
-     'x       x',
-     'xxxxxxxxx']
+# walls =['xxxxxxxxx',
+#      'x       x',
+#      'x xxxxx x',
+#      'x   x   x',
+#      'x       x',
+#      'x x x x x',
+#      'x x x x x',
+#      'x       x',
+#      'xxxxxxxxx']
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 YELLOW = (0, 255, 255)
 RED = (0, 0, 255)
 
-SF = 80
+SF = 30
 
 # Please be in the correct folder (run it outside of pacman133b)
 pacmanSprite = cv2.imread('pacman133b/pacman.png', cv2.IMREAD_COLOR)
@@ -59,7 +59,9 @@ class Map:
         self.h = len(walls)
         self.w = len(walls[0])
 
-        self.wallMap = np.zeros((self.h, self.w))
+        print(self.h, self.w)
+
+        self.wallMap = np.zeros((self.w, self.h))
 
         for x in range(self.w):
             for y in range(self.h):
@@ -156,7 +158,7 @@ if __name__ == "__main__":
     m = Map((3, 4))
     i = 0
 
-    GHOST_UPDATE_TIME = 0.5 # 2 seconds for each ghost update
+    GHOST_UPDATE_TIME = 2 # 2 seconds for each ghost update
     lastUpdateGhost = time.time()
 
     while True:
@@ -182,7 +184,6 @@ if __name__ == "__main__":
             m.colorLocation()
 
         f = m.generateImage()
-        f = m.colorLocationOutside(f, (3, 4), (255, 0, 0))
         cv2.imshow("Map", f)
 
         if kp & 0xFF == ord('q'):

@@ -5,7 +5,7 @@ import numpy as np
 from Ghost import Ghost
 import time
 from occupancymap import OccupancyMap
-"""
+
 walls = ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
      'x               x               x               x',
      'x                x             x                x',
@@ -41,7 +41,7 @@ walls =['xxxxxxxxx',
      'x x x x x',
      'x       x',
      'xxxxxxxxx']
-
+"""
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 YELLOW = (0, 255, 255)
@@ -80,6 +80,8 @@ class Map:
 
         self.G = Ghost(self, (1, 1))
         self.ghostSprite = cv2.flip(cv2.resize(ghostSprite, (SF, SF)), 0)
+
+        self.f = self.generateImage()
 
     def generatePacman(self, frame):
         x, y = self.pacmanLocation
@@ -150,6 +152,8 @@ class Map:
         
         else:
             self.pacmanLocation = (xf, yf)
+            self.f = self.generateImage()
+            prob_map.update()
 
     def moveGhost(self):
         self.G.update()
@@ -173,25 +177,22 @@ if __name__ == "__main__":
         kp = cv2.waitKey(1)
         if kp == ord('w'):
             m.movePacman((0, 1))
-            prob_map.update()
 
         if kp == ord('a'):
             m.movePacman((-1, 0))
-            prob_map.update()
 
         if kp == ord('s'):
             m.movePacman((0, -1))
-            prob_map.update()
 
         if kp == ord('d'):
             m.movePacman((1, 0))
-            prob_map.update()
 
         #if kp == ord('e'):
         #    m.colorLocation()
 
-        f = m.generateImage()
-        cv2.imshow("Map", f)
+        cv2.imshow("Map", m.f)
+        cv2.imshow("Occupancy Map", prob_map.cv_map)
+        
 
         if kp & 0xFF == ord('q'):
             break 

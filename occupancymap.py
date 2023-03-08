@@ -188,4 +188,3 @@ class OccupancyMap:
         x, y = location
         color = (0, (1-prob)*2, prob*2)
         return cv2.rectangle(frame, (x*SF, y*SF), ((x+1)*SF, (y+1)*SF), color, -1)
-    

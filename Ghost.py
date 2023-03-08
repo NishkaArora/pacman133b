@@ -13,7 +13,6 @@ class Ghost:
         if len(validMoves) == 1:
             self.prevMove = validMoves[0]
             self.position = x + validMoves[0][0], y + validMoves[0][1]
-            print("Here", validMoves[0])
             return validMoves[0]
         
         if not self.prevMove is None:
@@ -25,7 +24,6 @@ class Ghost:
         if len(validMoves) == 1:
             self.position = x + validMoves[0][0], y + validMoves[0][1]
             self.prevMove = validMoves[0]
-            print("Best", validMoves[0])
             return validMoves[0]
         
         possibleFutures = [(x + dx, y + dy) for (dx, dy) in validMoves]
@@ -38,7 +36,6 @@ class Ghost:
 
         self.position = x + bestMove[0], y + bestMove[1]
         self.prevMove = bestMove
-        print("BestMove", bestMove)
         return bestMove
 
         

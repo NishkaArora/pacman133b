@@ -93,9 +93,13 @@ ghostSprite = cv2.imread('pacman133b/ghost.png', cv2.IMREAD_COLOR)
 
 
 class Map:
-    def __init__(self, spawnPoint, probabilityMap=True):
+    def __init__(self, spawnPoint, probabilityMap=True, nGhosts = 4, ghostPing = 3):
         self.h = len(walls)
         self.w = len(walls[0])
+
+        print(self.h, self.w)
+
+        ghostLocations = [(1, 1), (1, self.h - 2), (self.w - 2, 1), (self.w - 2, self.h - 2)]
 
         self.defaultColoring = np.zeros((self.w, self.h, 3))
 
@@ -117,7 +121,8 @@ class Map:
         self.pacmanLocation = spawnPoint
         self.pacmanSprite = cv2.resize(pacmanSprite, (SF, SF))
 
-        self.G = Ghost(self, (1, 1))
+        self.ghosts = [Ghost(self, ghostLocations[i], ghostPing, id=i) for i in range(nGhosts)]
+
         self.ghostSprite = cv2.flip(cv2.resize(ghostSprite, (SF, SF)), 0)
 
         self.coloring = np.copy(self.defaultColoring)
@@ -136,13 +141,14 @@ class Map:
         frame[y*SF:(y+1)*SF, x*SF:(x+1)*SF] = self.pacmanSprite
         return frame
     
-    def generateGhost(self, frame):
-        x, y = self.G.position
-        frame[y*SF:(y+1)*SF, x*SF:(x+1)*SF] = self.ghostSprite
+    def generateGhosts(self, frame):
+
+        for ghost in self.ghosts:
+            x, y = ghost.position
+            frame[y*SF:(y+1)*SF, x*SF:(x+1)*SF] = self.ghostSprite
         return frame
 
     def generateImageFromScratch(self):
-        
         whiteScreen = np.zeros((self.h * SF, self.w * SF, 3))
 
         for x in range(self.w):
@@ -156,7 +162,8 @@ class Map:
     
     def generateImage(self):
         self.futureColoring[self.pacmanLocation] = PACMAN
-        self.futureColoring[self.G.position] = GHOST
+        for ghost in self.ghosts:
+            self.futureColoring[ghost.position] = GHOST
 
         for (x, y) in self.path:
             self.futureColoring[x, y] = self.pathColor
@@ -171,7 +178,7 @@ class Map:
                         self.frame = self.generatePacman(self.frame)
 
                     elif (self.futureColoring[x, y] == GHOST).all():
-                        self.frame = self.generateGhost(self.frame)
+                        self.frame = self.generateGhosts(self.frame)
 
                     else:
                         self.frame = self.colorLocationInternal(self.frame, (x, y), self.futureColoring[x, y])
@@ -229,14 +236,17 @@ class Map:
             self.pacmanLocation = (xf, yf)
 
     def moveGhost(self):
-        self.G.update()
+        for ghost in self.ghosts:
+            ghost.update()
 
 
 if __name__ == "__main__":
-    m = Map((3, 4))
+    GHOST_PING_TIME = 3 # ghost ping sent every 3 minutes 
+
+    m = Map((3, 4), ghostPing=GHOST_PING_TIME)
     i = 0
 
-    GHOST_UPDATE_TIME = 0.3 # 2 seconds for each ghost update
+    GHOST_UPDATE_TIME = 0.5 # 2 seconds for each ghost update
     lastUpdateGhost = time.time()
 
     while True:

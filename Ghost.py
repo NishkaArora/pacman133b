@@ -1,10 +1,15 @@
 import numpy as np
+import time
 
 class Ghost:
-    def __init__(self, map, spawnPoint) -> None:
+    def __init__(self, map, spawnPoint, pingTime, id) -> None:
         self.position = spawnPoint
         self.map = map
         self.prevMove = None
+        self.lastPing = time.time()
+        self.pingTime = pingTime
+        self.pingAvailable = False
+        self.id = id
 
     def update(self):
         validMoves = self.map.getValidMoves(self.position)
@@ -36,11 +41,17 @@ class Ghost:
 
         self.position = x + bestMove[0], y + bestMove[1]
         self.prevMove = bestMove
+
         return bestMove
 
-        
+    def updatePingStatus(self):
+        self.pingAvailable = time.time() - self.lastPing > self.pingTime
 
-        
+    def getPing(self):
+        self.lastPing = time.time()
+        self.updatePingStatus()
+
+        return (self.id, self.position) # Need to translate and add some varience
 
 
 

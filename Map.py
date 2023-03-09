@@ -88,8 +88,8 @@ GHOST = (-1, -1, -1)
 SF = 25
 
 # Please be in the correct folder (run it outside of pacman133b)
-pacmanSprite = cv2.imread('pacman133b/pacman.png', cv2.IMREAD_COLOR)
-ghostSprite = cv2.imread('pacman133b/ghost.png', cv2.IMREAD_COLOR)
+pacmanSprite = cv2.imread('pacman.png', cv2.IMREAD_COLOR)
+ghostSprite = cv2.imread('ghost.png', cv2.IMREAD_COLOR)
 
 
 class Map:
@@ -97,7 +97,7 @@ class Map:
         self.h = len(walls)
         self.w = len(walls[0])
 
-        print(self.h, self.w)
+        # print(self.h, self.w)
 
         ghostLocations = [(1, 1), (1, self.h - 2), (self.w - 2, 1), (self.w - 2, self.h - 2)]
 
@@ -161,12 +161,14 @@ class Map:
         return whiteScreen
     
     def generateImage(self):
-        self.futureColoring[self.pacmanLocation] = PACMAN
+        
         for ghost in self.ghosts:
             self.futureColoring[ghost.position] = GHOST
 
         for (x, y) in self.path:
             self.futureColoring[x, y] = self.pathColor
+            
+        self.futureColoring[self.pacmanLocation] = PACMAN
 
         commonValues = self.futureColoring == self.coloring
 
@@ -227,13 +229,13 @@ class Map:
         xf, yf = x + dx, y + dy
         if self.isWall((xf, yf)):
             # Can change
-            return 
+            return False
         
         else:
             if self.probabilityMap is not None:
                 self.probabilityMap.update()
-
             self.pacmanLocation = (xf, yf)
+        return True
 
     def moveGhost(self):
         for ghost in self.ghosts:

@@ -65,7 +65,7 @@ class State:
                  State.STATUSSTRING[self.status], self.cost))
 
 class Pacman_Map:
-    def __init__(self, M, N, spawnPoint):
+    def __init__(self, M, N, spawnPoint, original_map):
         self.h = N
         self.w = M
         self.wallMap = [[State(m,n) for n in range(N)] for m in range(M)]
@@ -73,14 +73,14 @@ class Pacman_Map:
         # setting initial costs and states
         for x in range(self.w):
             for y in range(self.h):
-                # self.wallMap[x][y].cost = 0.5
+                self.wallMap[x][y].cost = original_map.probabilityMap.get_prob_map()[x, y]
                 self.wallMap[x][y].status = State.UNKNOWN
         
         # setting walls
-        for wall in wall_coordinates:
-            x = wall[0]
-            y = wall[1]
-            self.wallMap[x][y].status = State.WALL
+        # for wall in wall_coordinates:
+        #     x = wall[0]
+        #     y = wall[1]
+        #     self.wallMap[x][y].status = State.WALL
         
         # setting neighbors for each box
         for m in range(M):
@@ -91,10 +91,10 @@ class Pacman_Map:
                             if not self.wallMap[m1][n1].status == State.WALL:
                                 self.wallMap[m][n].neighbors.append(self.wallMap[m1][n1])
     # restarting map                               
-    def restart_map(self):
+    def restart_map(self, original_map):
             for x in range(self.w):
                 for y in range(self.h):
-                # self.wallMap[x][y].cost = 0.5
+                    self.wallMap[x][y].cost = original_map.probabilityMap.get_prob_map()[x, y]
                     self.wallMap[x][y].status = State.UNKNOWN
 
 #
@@ -102,28 +102,25 @@ class Pacman_Map:
 #
 # Estimate the cost to go from state to goal.
 def costtogo(state, goal):
-    return  10 * state.distance(goal)    
+    return 10 * state.distance(goal) *1/1000  
 
 # initial dstar
 def dstar_start(start, goal, pacman_map, original_map, frame):
-    pacman_map.restart_map()
+    pacman_map.restart_map(original_map)
     onDeck = []
     goal.status = State.ONDECKEXPAND
     onDeck.append(goal)
-    frame, onDeck = process(start, goal, original_map, onDeck, frame)
-    return frame, onDeck
+    frame, onDeck, path = process(start, goal, original_map, onDeck, frame)
+    return frame, onDeck, path
 
 # dstar if there is an update to the map (currently there is not)
-def dstar_later(start, goal, pacman_map, original_map, onDeck, frame):
-    if start.status == State.WALL:
-        start.status = State.ONDECKREMOVE
-        if start not in onDeck:
-            bisect.insort(onDeck, start)
-        onDeck, new_frame = process(start, goal, original_map, onDeck, frame)
-        frame = new_frame
-    else:
-        frame, onDeck = dstar_start(start, goal, pacman_map, original_map, frame)
-    return frame, onDeck
+def dstar_later(x_pos, y_pos, start, goal, pacman_map, original_map, onDeck, frame):
+    # onDeck.remove(pacman_map.wallMap[x_pos][y_pos])
+    pacman_map.wallMap[x_pos][y_pos].status = State.ONDECKREMOVE
+    bisect.insort(onDeck, pacman_map.wallMap[x_pos][y_pos])
+    new_frame, onDeck, path = process(start, goal, original_map, onDeck, frame)
+    frame = new_frame
+    return frame, onDeck, path
     
 # 
 def process(start, goal, original_map, onDeck, frame):
@@ -131,15 +128,17 @@ def process(start, goal, original_map, onDeck, frame):
         node = onDeck.pop(0)
         if node.status == State.ONDECKEXPAND:
             for neighbor in node.neighbors:
+                x = neighbor.row
+                y = neighbor.col
                 if neighbor.status == State.UNKNOWN:
                     if neighbor in onDeck:
                         onDeck.remove(neighbor)
                     neighbor.parent = node
-                    neighbor.cost = node.creach + 1 + costtogo(neighbor, goal)
+                    neighbor.cost = original_map.probabilityMap.get_prob_map()[x, y] + costtogo(node, goal)
                     neighbor.status = State.ONDECKEXPAND
                     bisect.insort(onDeck, neighbor)
                 elif neighbor.status == State.ONDECKEXPAND:
-                    new_cost = node.creach + 1 + costtogo(neighbor, goal)
+                    new_cost = original_map.probabilityMap.get_prob_map()[x, y] + costtogo(neighbor, goal)
                     if new_cost < neighbor.cost:
                         neighbor.parent = node
                         neighbor.cost = new_cost
@@ -162,12 +161,15 @@ def process(start, goal, original_map, onDeck, frame):
     #############
     node = start.parent
     node.status = State.PATH
+    path = []
     while node != None:
         node.status = State.PATH
-        frame = original_map.colorLocationOutside(frame, [node.row, node.col], (0.0, 1.0, 0.0))
+        path.append([node.row, node.col])
+        # frame = original_map.colorLocationOutside(frame, [node.row, node.col], (0.0, 1.0, 0.0))
         node = node.parent
-    original_map.colorLocationOutside(frame, [goal.row, goal.col], (0.0, 0.0, 1.0))
+    original_map.highlightPath(path, (0.0, 1.0, 0.0))
+    # original_map.colorLocationOutside(frame, [goal.row, goal.col], (0.0, 0.0, 1.0))
     #############
-    return frame, onDeck
+    return frame, onDeck, path
                         
                     

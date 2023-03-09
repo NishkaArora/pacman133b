@@ -4,7 +4,7 @@ from Map import Map
 from dstar import Pacman_Map, State, dstar_start, dstar_later
 from astar import astar
 
-
+ 
 pacman_x_start = 3
 pacman_y_start = 4
 pellet_x = 1

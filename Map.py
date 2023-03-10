@@ -5,6 +5,7 @@ import numpy as np
 from Ghost import Ghost
 import time
 from occupancymap import OccupancyMap
+from GhostMap import GhostMap
 
 walls = ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
      'x               x               x               x',
@@ -88,8 +89,8 @@ GHOST = (-1, -1, -1)
 SF = 25
 
 # Please be in the correct folder (run it outside of pacman133b)
-pacmanSprite = cv2.imread('pacman133b/pacman.png', cv2.IMREAD_COLOR)
-ghostSprite = cv2.imread('pacman133b/ghost.png', cv2.IMREAD_COLOR)
+pacmanSprite = cv2.imread('pacman.png', cv2.IMREAD_COLOR)
+ghostSprite = cv2.imread('ghost.png', cv2.IMREAD_COLOR)
 
 
 class Map:
@@ -122,6 +123,8 @@ class Map:
         self.pacmanSprite = cv2.resize(pacmanSprite, (SF, SF))
 
         self.ghosts = [Ghost(self, ghostLocations[i], ghostPing, id=i) for i in range(nGhosts)]
+
+        self.ghostMaps = [GhostMap(ghost, self.w, self.h) for ghost in self.ghosts]
 
         self.ghostSprite = cv2.flip(cv2.resize(ghostSprite, (SF, SF)), 0)
 
@@ -241,7 +244,7 @@ class Map:
 
 
 if __name__ == "__main__":
-    GHOST_PING_TIME = 3 # ghost ping sent every 3 minutes 
+    GHOST_PING_TIME = 2 # ghost ping sent every 3 minutes 
 
     m = Map((3, 4), ghostPing=GHOST_PING_TIME)
     i = 0
@@ -268,9 +271,14 @@ if __name__ == "__main__":
 
         if kp == ord('d'):
             m.movePacman((1, 0))
+        
+        m.ghosts[0].updatePingStatus()
+        
+        m.ghostMaps[0].updateMap()
 
         cv2.imshow("Map", m.generateImage())
-        cv2.imshow("Occupancy Map", m.probabilityMap.cv_map)
+        #cv2.imshow("Occupancy Map", m.probabilityMap.cv_map)
+        cv2.imshow("ghost map", m.ghostMaps[0].ghost_map_cv)
 
         if kp & 0xFF == ord('q'):
             break 

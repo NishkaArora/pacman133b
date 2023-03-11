@@ -1,90 +1,100 @@
 import cv2 
 import numpy as np
 from Map import Map
-from dstar import Pacman_Map, State, dstar_start, dstar_later, calculate_cost
-from astar import astar
+from dstar import Pacman_Map, dstar_start, dstar_later, get_new_pellet, get_pellet_node, get_node
+# from astar import astar
 
- 
-pellet_locations = [[3, 7], [10, 10], [15, 19]]
-pacman_x_start = 3
-pacman_y_start = 4
+# different positions of the pellet
+pellet_locations = [[21, 20], [10, 10], [15, 19]]
+
+# start positions of the pacman
+pacman_start = (3, 4)
+
+# index of the pellet wanted in pellet_locations
 pellet_idx = 0
 
 if __name__ == "__main__":
-    original_map = Map((pacman_x_start, pacman_y_start))
-    M = original_map.w
-    N = original_map.h
-    print(M, N)
-    pacman_map = Pacman_Map(M, N, (pacman_x_start, pacman_y_start), original_map)
     
+    # creating the original map
+    original_map = Map(pacman_start)
     frame = original_map.generateImage()
     
-    pacman_start = pacman_map.wallMap[pacman_x_start][pacman_y_start]
-    pellet_goal = pacman_map.wallMap[pellet_locations[pellet_idx][0]][pellet_locations[pellet_idx][1]]
+    # dimentions of the map
+    M = original_map.w
+    N = original_map.h
+    
+    # creaing and initializing pacman map
+    pacman_map = Pacman_Map(M, N)
+    pacman_start = get_node(pacman_start, pacman_map)
+    pellet_goal = get_pellet_node(pellet_locations, pellet_idx, pacman_map)
+    
     # astar: 
     # frame = astar(pacman_start, pellet_goal, pacman_map, map, frame)
     
-    # dstar:
-    frame, onDeck, path = dstar_start(pacman_start, pellet_goal, pacman_map, original_map, frame, True)
+    # running initial dstar:
+    onDeck, path = dstar_start(pacman_start, pellet_goal, pacman_map, original_map)
+    
+    # storing old occupancy map
     old_occup_map = original_map.probabilityMap.get_prob_map()
-    older_val = old_occup_map[3, 5]
+    
+    # starting loop
     while True:
-        pellet_goal = pacman_map.wallMap[pellet_locations[pellet_idx][0]][pellet_locations[pellet_idx][1]]
+        # move is if pacman moves, change is if the occupancy map has changed
         move = False
-        kp = cv2.waitKey(1)
+        change = False
+        changed_places = []
         frame = original_map.generateImage()
+        
+        # moving pacman
+        kp = cv2.waitKey(1)
+        
         if kp == ord('w'):
             move = True
             movement = [0, 1]
-            #old_occup_map = original_map.probabilityMap.get_prob_map()
 
         if kp == ord('a'):
             move = True
             movement = [-1, 0]
-            #old_occup_map = original_map.probabilityMap.get_prob_map()
                 
         if kp == ord('s'):
             move = True
             movement = [0, -1]
-            #old_occup_map = original_map.probabilityMap.get_prob_map()
                 
         if kp == ord('d'):
             move = True
             movement = [1, 0]
-            
-        flag = False
-        changed_places = []
         
+        # if there is a movement
         if move:
+            
+            # make sure that there are still pellets to collect
+            if len(pellet_locations) == 0:
+                break
+            
+            # finds the places in the map that have changed (change to ones that are looked at from nishka)
+            curr_prob_map = original_map.probabilityMap.get_prob_map()
+            
             for x,y in path:
-                if old_occup_map[x,y] != original_map.probabilityMap.get_prob_map()[x, y]:
-                    flag = True
-                    changed_places.append([x,y])
-                    # break
+                if old_occup_map[x,y] != curr_prob_map[x, y]:
+                    change = True
+                    # changed_places.append([x,y])
+            
+            # storing the older version of the probability map
             old_occup_map = original_map.probabilityMap.get_prob_map()
-            if not original_map.movePacman(movement) or flag:
-                x_wanted, y_wanted = movement
-                x, y = original_map.pacmanLocation
-                start = pacman_map.wallMap[x][y]
-                if start == pellet_goal:
+            
+            # if valid move or if there is a change in the occupancy map
+            if not original_map.movePacman(movement) or change:
+                curr_pacmamn_pos = get_node(original_map.pacmanLocation, pacman_map)
+                
+                # if the pacman reaches a pellet then switch the pellet_location
+                if curr_pacmamn_pos == pellet_goal:
                     if len(pellet_locations) == 1:
                         break
-                    pellet_locations.remove([pellet_locations[pellet_idx][0], pellet_locations[pellet_idx][1]])
-                    pellet_goal = pacman_map.wallMap[pellet_locations[0][0]][pellet_locations[0][1]]
-                    frame_new, onDeck_new, path_new = dstar_start(start, pellet_goal, pacman_map, original_map, frame, False)
-                    min_cost = calculate_cost(path_new, pacman_map)
-                    pellet_idx = 0
-                    for i in range(1, len(pellet_locations)):
-                        pellet_goal = pacman_map.wallMap[pellet_locations[i][0]][pellet_locations[i][1]]
-                        frame_new, onDeck_new, path_new = dstar_start(start, pellet_goal, pacman_map, original_map, frame, False)
-                        if calculate_cost(path_new, pacman_map) < min_cost:
-                            min_cost = calculate_cost(path_new, pacman_map)
-                            pellet_idx = i
-                            frame_new = frame
-                    print(pellet_goal)
-                pellet_goal = pacman_map.wallMap[pellet_locations[pellet_idx][0]][pellet_locations[pellet_idx][1]]
-                frame, onDeck, path = dstar_start(start, pellet_goal, pacman_map, original_map, frame, True)
-                # frame, onDeck, path = dstar_later(pacman_x_start, pacman_y_start, pacman_start, start, pellet_goal, pacman_map, original_map, old_occup_map, onDeck, frame, changed_places, path)
+                    pellet_locations, pellet_idx = get_new_pellet(pellet_locations, pellet_idx, pacman_map, curr_pacmamn_pos, original_map)
+                    pellet_goal = get_pellet_node(pellet_locations, pellet_idx, pacman_map)
+                onDeck, path = dstar_start(curr_pacmamn_pos, pellet_goal, pacman_map, original_map)
+                # onDeck, path = dstar_later(start, pellet_goal, pacman_map, original_map, old_occup_map, onDeck, path)
+                
         cv2.imshow("Map", frame)
         cv2.imshow("Occupancy Map", original_map.probabilityMap.cv_map)
         if kp & 0xFF == ord('q'):

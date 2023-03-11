@@ -32,7 +32,8 @@ if __name__ == "__main__":
     # frame = astar(pacman_start, pellet_goal, pacman_map, map, frame)
     
     # running initial dstar:
-    onDeck, path = dstar_start(pacman_start, pellet_goal, pacman_map, original_map)
+    onDeck, path = dstar_start(pacman_start, pellet_goal, pacman_map, 
+                               original_map)
     
     # storing old occupancy map
     old_occup_map = original_map.probabilityMap.get_prob_map()
@@ -71,7 +72,8 @@ if __name__ == "__main__":
             if len(pellet_locations) == 0:
                 break
             
-            # finds the places in the map that have changed (change to ones that are looked at from nishka)
+            # finds the places in the map that have changed (change to ones 
+            # that are looked at from nishka)
             curr_prob_map = original_map.probabilityMap.get_prob_map()
             
             for x,y in path:
@@ -84,15 +86,23 @@ if __name__ == "__main__":
             
             # if valid move or if there is a change in the occupancy map
             if not original_map.movePacman(movement) or change:
-                curr_pacmamn_pos = get_node(original_map.pacmanLocation, pacman_map)
+                curr_pacmamn_pos = get_node(original_map.pacmanLocation, 
+                                            pacman_map)
                 
                 # if the pacman reaches a pellet then switch the pellet_location
                 if curr_pacmamn_pos == pellet_goal:
                     if len(pellet_locations) == 1:
                         break
-                    pellet_locations, pellet_idx = get_new_pellet(pellet_locations, pellet_idx, pacman_map, curr_pacmamn_pos, original_map)
-                    pellet_goal = get_pellet_node(pellet_locations, pellet_idx, pacman_map)
-                onDeck, path = dstar_start(curr_pacmamn_pos, pellet_goal, pacman_map, original_map)
+                    pellet_locations, pellet_idx = get_new_pellet(
+                                                   pellet_locations, 
+                                                   pellet_idx, pacman_map, 
+                                                   curr_pacmamn_pos, 
+                                                   original_map)
+                    pellet_goal = get_pellet_node(pellet_locations, 
+                                                  pellet_idx, pacman_map)
+                onDeck, path = dstar_start(curr_pacmamn_pos, pellet_goal, 
+                                           pacman_map, original_map)
+                
                 # onDeck, path = dstar_later(start, pellet_goal, pacman_map, original_map, old_occup_map, onDeck, path)
                 
         cv2.imshow("Map", frame)

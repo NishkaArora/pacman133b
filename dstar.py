@@ -4,6 +4,7 @@ import bisect
 
 PROBABILITY_SCALE = 100
 WALL_THRESHOLD = 0.7
+GREEN = (0.0, 1.0, 0.0)
 
 # wall_coordinates = [[2, 2], [2, 3], [4, 2], 
 #                     [4, 3], [6, 2], [6, 3], 
@@ -142,23 +143,33 @@ def process(start, goal, original_map, onDeck):
             for neighbor in node.neighbors:
                 x = neighbor.row
                 y = neighbor.col
+                
+                # if neighbor has not been explored yet
                 if neighbor.status == State.UNKNOWN:
-                    neighbor.parent = node
-                    neighbor.creach = node.creach + 1
                     cost_of_spot = prob_map[x, y]*PROBABILITY_SCALE
-                    neighbor.cost = neighbor.creach + costtogo(neighbor, start) + cost_of_spot
+                    new_to_go_cost = costtogo(neighbor, start) + cost_of_spot
                     neighbor.status = State.ONDECKEXPAND
+                    neighbor = update_node_expand(node, neighbor, new_to_go_cost)
                     bisect.insort(onDeck, neighbor)
+                
+                # if neighbor needs to expand
                 elif neighbor.status == State.ONDECKEXPAND:
+                    
+                    # calculate new cost
                     cost_of_spot = prob_map[x, y]*PROBABILITY_SCALE
                     new_cost = node.creach + 1 + cost_of_spot + costtogo(neighbor, start)
+                    
+                    # compare new cost with old cost
                     if new_cost < neighbor.cost:
-                        neighbor.parent = node
-                        neighbor.creach = node.creach + 1
-                        neighbor.cost = new_cost
+                        new_to_go_cost = new_cost - (node.creach + 1)
+                        neighbor = update_node_expand(node, neighbor, new_to_go_cost)
                         onDeck.remove(neighbor)
                         bisect.insort(onDeck, neighbor)
+            
+            # mark node as processed
             node.status = State.PROCESSED
+            
+            # if start node found, stop process
             if node == start:
                 break
         
@@ -166,15 +177,11 @@ def process(start, goal, original_map, onDeck):
         elif node.status == State.ONDECKREMOVE:
             for neighbor in node.neighbors:
                 if neighbor.parent == node:
-                    neighbor.status = State.ONDECKREMOVE
-                    if neighbor in onDeck:
-                        onDeck.remove(neighbor)
-                    bisect.insort(onDeck, neighbor)
+                    status = State.ONDECKREMOVE
+                    onDeck = update_node_remove(onDeck, neighbor, status)
                 elif neighbor.status == State.PROCESSED:
-                    neighbor.status = State.ONDECKEXPAND
-                    if neighbor in onDeck:
-                        onDeck.remove(neighbor)
-                    bisect.insort(onDeck, neighbor)
+                    status = State.ONDECKEXPAND
+                    onDeck = update_node_remove(onDeck, neighbor, status)
             node.status = State.UNKNOWN
 
     print("Marking path...")
@@ -185,7 +192,7 @@ def process(start, goal, original_map, onDeck):
         node.status = State.PATH
         path.append([node.row, node.col])
         node = node.parent
-    original_map.highlightPath(path, (0.0, 1.0, 0.0))
+    original_map.highlightPath(path, GREEN)
     return onDeck, path
 
 # calculate the cost of the path
@@ -194,7 +201,6 @@ def calculate_cost(path, pacman_map):
     for x,y in path:
         cost += pacman_map.wallMap[x][y].cost 
     return cost
-    
 
 # getting the new pellet to go to
 def get_new_pellet(pellet_locations, pellet_idx, pacman_map, start, original_map):
@@ -238,3 +244,18 @@ def get_pellet_node(pellet_locations, pellet_idx, pacman_map):
 def get_node(location, pacman_map):
     x, y = location
     return pacman_map.wallMap[x][y]
+
+# updating node in ONDECKEXPAND
+def update_node_expand(node, neighbor, new_to_go_cost):
+    neighbor.parent = node
+    neighbor.creach = node.creach + 1
+    neighbor.cost = neighbor.creach + new_to_go_cost
+    return neighbor
+
+# updating node in ONDECKREMOVE
+def update_node_remove(onDeck, neighbor, status):
+    neighbor.status = status
+    if neighbor in onDeck:
+        onDeck.remove(neighbor)
+    bisect.insort(onDeck, neighbor)
+    return onDeck

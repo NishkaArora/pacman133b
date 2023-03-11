@@ -42,7 +42,6 @@ if __name__ == "__main__":
     while True:
         # move is if pacman moves, change is if the occupancy map has changed
         move = False
-        change = False
         changed_places = []
         frame = original_map.generateImage()
         
@@ -71,21 +70,22 @@ if __name__ == "__main__":
             # make sure that there are still pellets to collect
             if len(pellet_locations) == 0:
                 break
-            
-            # finds the places in the map that have changed (change to ones 
-            # that are looked at from nishka)
-            curr_prob_map = original_map.probabilityMap.get_prob_map()
-            
-            for x,y in path:
-                if old_occup_map[x,y] != curr_prob_map[x, y]:
-                    change = True
-                    # changed_places.append([x,y])
-            
-            # storing the older version of the probability map
-            old_occup_map = original_map.probabilityMap.get_prob_map()
-            
+            # print("here")
+            # print(old_occup_map[5][5])
             # if valid move or if there is a change in the occupancy map
-            if not original_map.movePacman(movement) or change:
+            valid_move = original_map.movePacman(movement)
+            if not valid_move:
+                continue
+            else:
+                # finds the places in the map that have changed (change to ones 
+                # that are looked at from nishka)
+                curr_prob_map = original_map.probabilityMap.get_prob_map()
+                
+                for x,y in path:
+                    if old_occup_map[x,y] != curr_prob_map[x, y]:
+                        change = True
+                    # changed_places.append([x,y])
+
                 curr_pacmamn_pos = get_node(original_map.pacmanLocation, 
                                             pacman_map)
                 
@@ -100,10 +100,17 @@ if __name__ == "__main__":
                                                    original_map)
                     pellet_goal = get_pellet_node(pellet_locations, 
                                                   pellet_idx, pacman_map)
-                onDeck, path = dstar_start(curr_pacmamn_pos, pellet_goal, 
-                                           pacman_map, original_map)
+                # onDeck, path = dstar_start(curr_pacmamn_pos, pellet_goal, 
+                #                            pacman_map, original_map)
                 
-                # onDeck, path = dstar_later(start, pellet_goal, pacman_map, original_map, old_occup_map, onDeck, path)
+                onDeck, path = dstar_later(curr_pacmamn_pos, pellet_goal, 
+                                           pacman_map, original_map, 
+                                           old_occup_map, onDeck, path)
+                
+                # storing the older version of the probability map
+                old_occup_map = original_map.probabilityMap.get_prob_map()
+                
+                # print(old_occup_map[5][5])
                 
         cv2.imshow("Map", frame)
         cv2.imshow("Occupancy Map", original_map.probabilityMap.cv_map)

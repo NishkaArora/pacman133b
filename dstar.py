@@ -41,9 +41,8 @@ class State:
     
     # Return the representation.
     def __repr__(self):
-        return ("<State %d,%d = %s, cost %f>\n" %
-                (self.row, self.col,
-                 State.STATUSSTRING[self.status], self.cost))
+        return ("<State %d,%d, cost %f>\n" %
+                (self.row, self.col, self.cost))
     
     # Define the Manhattan distance.
     def distance(self, other):
@@ -94,7 +93,7 @@ def costtogo(state, goal):
 def dstar_start(start, goal, pacman_map, original_map):
     
     # resetting the map by setting all nodes to UNKNOWN state
-    pacman_map.restart_map(original_map)
+    pacman_map.restart_map()
     
     # creating onDeck starting with goal
     onDeck = []
@@ -114,16 +113,32 @@ def dstar_later(start, goal, pacman_map, original_map, old_map, onDeck, path):
     num_cols = len(pacman_map.wallMap[0])
     
     # updating the costs for every node. if the node is a wall then change status
-    for x in range(num_rows):
-        for y in range(num_cols):
-            node = get_node([x, y], pacman_map)
-            node.cost += prob_map[x, y] - old_map[x, y]
-            if prob_map[x, y] > WALL_THRESHOLD:
-                node.status = State.ONDECKREMOVE
-            # if node in onDeck:
-            #     onDeck.remove(node)
-            #     bisect.insort(onDeck, node)
+    # error is that the ondeck is being emptied
+    # for x in range(num_rows):
+    #     for y in range(num_cols):
+    #         node = get_node([x, y], pacman_map)
+    #         # print("here")
+    #         # print(node.cost)
+    #         node.cost += np.exp(prob_map[x, y]*10) - np.exp(old_map[x, y]*10)# *PROBABILITY_SCALE
+    #         if node == start:
+    #             print(np.exp(prob_map[x, y]*10) - np.exp(old_map[x, y]*10))
+    #         # print(node.cost)
+    #         if prob_map[x, y] > WALL_THRESHOLD:
+    #             node.status = State.ONDECKREMOVE
+    #         if node in onDeck:
+    #             # print("here")
+    #             onDeck.remove(node)
+    #             bisect.insort(onDeck, node)
+    onDeck2 = []
+    for node in onDeck:
+        onDeck.remove(node)
+        if prob_map[node.row, node.col] > WALL_THRESHOLD:
+            node.status = State.ONDECKREMOVE
+        bisect.insort(onDeck2, node)
+        
+    onDeck = onDeck2
     start.status = State.ONDECKREMOVE
+    start.parent = None
     bisect.insort(onDeck, start)
     onDeck, path = process(start, goal, original_map, onDeck)
     return onDeck, path
@@ -133,11 +148,11 @@ def process(start, goal, original_map, onDeck):
     
     # getting probability map 
     prob_map = original_map.probabilityMap.get_prob_map()
-    
+    a = True
     # starting loop
-    while len(onDeck) != 0:
+    while a:
+    #while len(onDeck) != 0:
         node = onDeck.pop(0)
-        
         # if node meant to expand
         if node.status == State.ONDECKEXPAND:
             for neighbor in node.neighbors:
@@ -146,7 +161,7 @@ def process(start, goal, original_map, onDeck):
                 
                 # if neighbor has not been explored yet
                 if neighbor.status == State.UNKNOWN:
-                    cost_of_spot = prob_map[x, y]*PROBABILITY_SCALE
+                    cost_of_spot = np.exp(prob_map[x, y] * 10)
                     new_to_go_cost = costtogo(neighbor, start) + cost_of_spot
                     neighbor.status = State.ONDECKEXPAND
                     neighbor = update_node_expand(node, neighbor, new_to_go_cost)
@@ -156,14 +171,15 @@ def process(start, goal, original_map, onDeck):
                 elif neighbor.status == State.ONDECKEXPAND:
                     
                     # calculate new cost
-                    cost_of_spot = prob_map[x, y]*PROBABILITY_SCALE
+                    cost_of_spot = np.exp(prob_map[x, y] * 10)
                     new_cost = node.creach + 1 + cost_of_spot + costtogo(neighbor, start)
                     
                     # compare new cost with old cost
                     if new_cost < neighbor.cost:
                         new_to_go_cost = new_cost - (node.creach + 1)
                         neighbor = update_node_expand(node, neighbor, new_to_go_cost)
-                        onDeck.remove(neighbor)
+                        if neighbor in onDeck:
+                            onDeck.remove(neighbor)
                         bisect.insort(onDeck, neighbor)
             
             # mark node as processed
@@ -171,7 +187,8 @@ def process(start, goal, original_map, onDeck):
             
             # if start node found, stop process
             if node == start:
-                break
+                a = False
+                continue
         
         # if node meant to removed
         elif node.status == State.ONDECKREMOVE:
@@ -183,7 +200,6 @@ def process(start, goal, original_map, onDeck):
                     status = State.ONDECKEXPAND
                     onDeck = update_node_remove(onDeck, neighbor, status)
             node.status = State.UNKNOWN
-
     print("Marking path...")
     node = start.parent
     node.status = State.PATH

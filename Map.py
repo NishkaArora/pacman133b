@@ -325,16 +325,13 @@ if __name__ == "__main__":
                 lastUpdatePacman += PACMAN_UPADTE_TIME
                 m.movePacman((0, -1))
 
-        if kp == ord('d'):
-            m.movePacman((1, 0))
+            if kp == ord('d'):
+                lastUpdatePacman += PACMAN_UPADTE_TIME
+                m.movePacman((1, 0))
         
         m.ghosts[0].updatePingStatus()
         
         m.ghostMaps[0].updateMap()
-
-            if kp == ord('d'):
-                lastUpdatePacman += PACMAN_UPADTE_TIME
-                m.movePacman((1, 0))
 
         # if m.checkGameComplete():
         #     print("Game Over")
@@ -353,9 +350,6 @@ if __name__ == "__main__":
     while True:
         # End Screen, no inputs
         cv2.imshow("Map", m.generateImage())
-        #cv2.imshow("Occupancy Map", m.probabilityMap.cv_map)
-        cv2.imshow("ghost map", m.ghostMaps[0].ghost_map_cv)
-
         kp = cv2.waitKey(1)
         if kp & 0xFF == ord('q'):
             break 

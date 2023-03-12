@@ -6,17 +6,17 @@ import cv2
 # Log-odds Ratio Constants
 INIT_VAL = 0.3
 L_FREE = 0.05
-L_IWASHERE = 0.1
+#L_IWASHERE = 0.1
 L_OCCUPIED = 0.3
 
 ### Laser Properties ###
 # distance
-SEARCH_RAD = 5
+SEARCH_RAD = 3
 
 # angles
-DTHETA = 30
-thetas = np.arange(0, 360, DTHETA)
-SF = 30
+# DTHETA = 30
+# thetas = np.arange(0, 360, DTHETA)
+SF = 25
 
 
 class OccupancyMap:
@@ -39,10 +39,67 @@ class OccupancyMap:
         #self.logodds_map[new_loc] -= L_IWASHERE # uncomment to leave behind a trail
         cx, cy = new_loc
 
-        # create rays - a circle around pacman
-        rays = set()
+        # create rays around pacman
 
         def add_to_rays(x, y):
+
+            x_right = min(x+SEARCH_RAD, self.w-1)
+            x_left = max(0, x-SEARCH_RAD)
+
+            y_up = min(y+SEARCH_RAD, self.h-1)
+            y_down = max(0, y-SEARCH_RAD)
+
+            return set([(x, y_up), (x, y_down), (x_right, y), (x_left, y)])
+
+        rays = add_to_rays(cx, cy)
+
+        # trace each ray
+        for ray in rays:
+            endx, endy = ray
+            #self.logodds_map[endx, endy] -= L_FREE
+
+            if cx == endx:
+                # trace in y direction
+                for y in range(cy, endy-1 if cy>endy else endy+1, -1 if cy > endy else 1):
+
+                    if not self.true_map[cx, y]: # not a wall
+                        self.logodds_map[cx, y] -=L_FREE
+                    else:
+                        self.logodds_map[cx, y] += L_OCCUPIED
+                        break
+
+            elif cy == endy:
+                # trace in x direction
+                for x in range(cx, endx-1 if cx>endx else endx+1, -1 if cx > endx else 1):
+                    if not self.true_map[x, cy]: # not a wall
+                        self.logodds_map[x, cy] -=L_FREE
+                    else:
+                        self.logodds_map[x, cy] += L_OCCUPIED
+                        break               
+
+        self.cv_map = self.generateOccupancyMap()
+
+    def generateOccupancyMap(self):
+        
+        whiteScreen = np.zeros((self.h * SF, self.w * SF, 3))
+        prob_map = self.get_prob_map()
+
+        for x in range(self.w):
+            for y in range(self.h):
+                whiteScreen = self.colorLocation(whiteScreen, (x, y), prob_map[x, y])
+
+        whiteScreen = cv2.flip(whiteScreen, 0)
+        return whiteScreen
+    
+    def colorLocation(self, frame, location, prob):
+        x, y = location
+        color = (0, (1-prob)*2, prob*2)
+        return cv2.rectangle(frame, (x*SF, y*SF), ((x+1)*SF, (y+1)*SF), color, -1)
+
+
+"""
+
+def add_to_rays(x, y):
             if x < 0:
                 x = 0
             if x >= self.w - 1:
@@ -53,26 +110,7 @@ class OccupancyMap:
                 y = self.h-1
             
             rays.add((x, y))
-        
-        r = SEARCH_RAD
-        for x in range(-r, r+1, 1): # goes from -r to r
-            hgt = int(sqrt(r*r - x*x))
-
-            add_to_rays(cx + x, cy + hgt)
-            add_to_rays(cx + x, cy - hgt)
-
-            add_to_rays(cx+hgt, cy + x)
-            add_to_rays(cx-hgt, cy + x)
-
-        # do bresenhams on each ray
-        for ray in rays:
-            endx, endy = ray
-            #self.logodds_map[endx, endy] -= L_FREE
-            self.bresenhams_redirector(cx, cy, endx, endy)
-
-        self.cv_map = self.generateOccupancyMap()
     
-
     def bresenhams_redirector(self, x0, y0, x1, y1):
         if abs(y1 - y0) < abs(x1 - x0):
             if x0 > x1:
@@ -134,57 +172,40 @@ class OccupancyMap:
             else:
                 D = D + 2*dx
 
-    # def bresenhams(self, u1, u2, v1, v2):
-    #     # if empty in self.true_map, subtract L_FREE
-    #     # if not empty in self.true_map, add L_OCCUPIED
-    #     # add noise on detection later
-    #     du = - abs(u2-u1)
-    #     dv = abs(v2-v1)
+    def bresenhams(self, u1, u2, v1, v2):
+        # if empty in self.true_map, subtract L_FREE
+        # if not empty in self.true_map, add L_OCCUPIED
+        # add noise on detection later
+        du = - abs(u2-u1)
+        dv = abs(v2-v1)
 
-    #     su = 1 if u1 < u2 else -1
-    #     sv = 1 if v1 < v2 else -1
+        su = 1 if u1 < u2 else -1
+        sv = 1 if v1 < v2 else -1
 
-    #     err = du + dv
-    #     uk, vk = u1, v1
+        err = du + dv
+        uk, vk = u1, v1
 
-    #     while True:
-    #         if not self.true_map[uk, vk]: # not a wall
-    #             self.logodds_map[uk, vk] -= L_FREE
-    #         else:
-    #             self.logodds_map[uk, vk] += L_OCCUPIED
-    #             break # obstacle, don't measure the rest of the line
+        while True:
+            if not self.true_map[uk, vk]: # not a wall
+                self.logodds_map[uk, vk] -= L_FREE
+            else:
+                self.logodds_map[uk, vk] += L_OCCUPIED
+                break # obstacle, don't measure the rest of the line
 
-    #         if (uk, vk) == (u2, v2):
-    #             break # line done
+            if (uk, vk) == (u2, v2):
+                break # line done
 
-    #         if err*2 >= du: # time to move v
-    #             if vk == v2:
-    #                 break # line done
+            if err*2 >= du: # time to move v
+                if vk == v2:
+                    break # line done
 
-    #             err = err + du
-    #             vk = vk + sv
+                err = err + du
+                vk = vk + sv
 
-    #         if err*2 <= dv: # time to move u
-    #             if uk == u2:
-    #                 break # line done
+            if err*2 <= dv: # time to move u
+                if uk == u2:
+                    break # line done
 
-    #             err = err + dv
-    #             uk = uk + su
-
-
-    def generateOccupancyMap(self):
-        
-        whiteScreen = np.zeros((self.h * SF, self.w * SF, 3))
-        prob_map = self.get_prob_map()
-
-        for x in range(self.w):
-            for y in range(self.h):
-                whiteScreen = self.colorLocation(whiteScreen, (x, y), prob_map[x, y])
-
-        whiteScreen = cv2.flip(whiteScreen, 0)
-        return whiteScreen
-    
-    def colorLocation(self, frame, location, prob):
-        x, y = location
-        color = (0, (1-prob)*2, prob*2)
-        return cv2.rectangle(frame, (x*SF, y*SF), ((x+1)*SF, (y+1)*SF), color, -1)
+                err = err + dv
+                uk = uk + su
+"""

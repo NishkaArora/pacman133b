@@ -114,31 +114,34 @@ def dstar_later(start, goal, pacman_map, original_map, old_map, onDeck, path):
     
     # updating the costs for every node. if the node is a wall then change status
     # error is that the ondeck is being emptied
-    # for x in range(num_rows):
-    #     for y in range(num_cols):
-    #         node = get_node([x, y], pacman_map)
-    #         # print("here")
-    #         # print(node.cost)
-    #         node.cost += np.exp(prob_map[x, y]*10) - np.exp(old_map[x, y]*10)# *PROBABILITY_SCALE
-    #         if node == start:
-    #             print(np.exp(prob_map[x, y]*10) - np.exp(old_map[x, y]*10))
-    #         # print(node.cost)
-    #         if prob_map[x, y] > WALL_THRESHOLD:
-    #             node.status = State.ONDECKREMOVE
-    #         if node in onDeck:
-    #             # print("here")
-    #             onDeck.remove(node)
-    #             bisect.insort(onDeck, node)
-    onDeck2 = []
-    for node in onDeck:
-        onDeck.remove(node)
-        if prob_map[node.row, node.col] > WALL_THRESHOLD:
-            node.status = State.ONDECKREMOVE
-        bisect.insort(onDeck2, node)
+    for x in range(num_rows):
+        for y in range(num_cols):
+            node = get_node([x, y], pacman_map)
+            # print("here")
+            # print(node.cost)
+            new_cost = np.exp(prob_map[x, y]*10) - np.exp(old_map[x, y]*10)# *PROBABILITY_SCALE
+            node.cost += new_cost
+            if node == start:
+                print(np.exp(prob_map[x, y]*10) - np.exp(old_map[x, y]*10))
+            # print(node.cost)
+            if prob_map[x, y] > WALL_THRESHOLD:
+                node.status = State.ONDECKREMOVE
+            elif new_cost < 0:
+                node.status = State.ONDECKEXPAND
+            if node in onDeck:
+                # print("here")
+                onDeck.remove(node)
+                bisect.insort(onDeck, node)
+    # onDeck2 = []
+    # for node in onDeck:
+    #     onDeck.remove(node)
+    #     if prob_map[node.row, node.col] > WALL_THRESHOLD:
+    #         node.status = State.ONDECKREMOVE
+    #     bisect.insort(onDeck2, node)
         
-    onDeck = onDeck2
+    # onDeck = onDeck2
     start.status = State.ONDECKREMOVE
-    start.parent = None
+    # start.parent = None
     bisect.insort(onDeck, start)
     onDeck, path = process(start, goal, original_map, onDeck)
     return onDeck, path
@@ -275,3 +278,15 @@ def update_node_remove(onDeck, neighbor, status):
         onDeck.remove(neighbor)
     bisect.insort(onDeck, neighbor)
     return onDeck
+
+def choose_closest_pellet(start, pellet_locations, pacman_map):
+    pellet_node = get_pellet_node(pellet_locations, 0, pacman_map)
+    lowest_cost = costtogo(pellet_node, start)
+    pellet_idx = 0
+    for idx in range(len(pellet_locations)):
+        pellet_node = get_pellet_node(pellet_locations, idx, pacman_map)
+        new_cost = costtogo(pellet_node, start)
+        if new_cost < lowest_cost:
+            pellet_idx = idx
+            lowest_cost = new_cost
+    return pellet_idx

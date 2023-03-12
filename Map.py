@@ -6,6 +6,17 @@ from Ghost import Ghost
 import time
 from occupancymap import OccupancyMap
 
+# from playsound import playsound
+# from threading import Thread
+ 
+# # for playing note.wav file
+# def play_sound():
+#     playsound('pacman133b/backgroundmusic.wav')
+
+
+# thread = Thread(target=play_sound)
+# thread.start()
+
 walls = ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
      'x               x               x               x',
      'x                x             x                x',
@@ -128,6 +139,8 @@ class Map:
         self.coloring = np.copy(self.defaultColoring)
         self.futureColoring = np.copy(self.defaultColoring)
 
+        self.testColoring = np.zeros_like(self.futureColoring)
+
         self.frame = self.generateImageFromScratch()
 
         self.path = []
@@ -161,6 +174,9 @@ class Map:
         return whiteScreen
     
     def generateImage(self):
+        # Save a "prev future coloring"
+        self.defaultColoring = np.copy(self.futureColoring)
+
         self.futureColoring[self.pacmanLocation] = PACMAN
         for ghost in self.ghosts:
             self.futureColoring[ghost.position] = GHOST
@@ -231,13 +247,47 @@ class Map:
         
         else:
             if self.probabilityMap is not None:
+                prevProbs = self.probabilityMap.get_prob_map() # Ensure this is only for the "explored" probability, not for the ghost map
                 self.probabilityMap.update()
+                newProbs = self.probabilityMap.get_prob_map()
+                self.updateColorsProbability(prevProbs, newProbs)
 
             self.pacmanLocation = (xf, yf)
+
+    def updateColorsProbability(self, prevProbs, newProbs):
+        self.testColoring = np.zeros_like(self.futureColoring)
+        differentProbs = np.ones_like(prevProbs)
+
+        for x in range(self.w):
+            for y in range(self.h):
+                if differentProbs[x, y]:
+                    self.futureColoring[x, y] = self.getTileColoring(x, y, newProbs[x, y])
+
+    def generateTestImage(self):
+        blankImage = np.zeros((SF * self.h, SF * self.w, 3))
+        for x in range(self.w):
+            for y in range(self.h):
+                blankImage = self.colorLocationInternal(blankImage, (x, y), self.testColoring[x, y])
+
+        return cv2.flip(blankImage, 0)
+                   
+    def getTileColoring(self, x, y, newProb):
+        if self.isWall((x, y)):
+            # If wall, 
+            shading = (1 - newProb) * 0.95
+            return (shading, shading, shading)
+        
+        else:
+            shading = (1 - (newProb * 0.95))
+            return (shading, shading, shading)
 
     def moveGhost(self):
         for ghost in self.ghosts:
             ghost.update()
+
+    def checkGameComplete(self):
+        ghostPositions = [ghost.position for ghost in self.ghosts]
+        return self.pacmanLocation in ghostPositions
 
 
 if __name__ == "__main__":
@@ -246,7 +296,9 @@ if __name__ == "__main__":
     m = Map((3, 4), ghostPing=GHOST_PING_TIME)
     i = 0
 
-    GHOST_UPDATE_TIME = 0.5 # 2 seconds for each ghost update
+    GHOST_UPDATE_TIME = 0.3 # 2 seconds for each ghost update
+    PACMAN_UPADTE_TIME = 0.1
+    lastUpdatePacman = time.time()
     lastUpdateGhost = time.time()
 
     while True:
@@ -255,22 +307,45 @@ if __name__ == "__main__":
             lastUpdateGhost += GHOST_UPDATE_TIME
             m.moveGhost()
 
-        kp = cv2.waitKey(5)
+        kp = cv2.waitKey(1)
 
-        if kp == ord('w'):
-            m.movePacman((0, 1))
+        if currentTime - lastUpdatePacman > PACMAN_UPADTE_TIME:
+            if kp == ord('w'):
+                lastUpdatePacman += PACMAN_UPADTE_TIME
+                m.movePacman((0, 1))
 
-        if kp == ord('a'):
-            m.movePacman((-1, 0))
+            if kp == ord('a'):
+                lastUpdatePacman += PACMAN_UPADTE_TIME
+                m.movePacman((-1, 0))
 
-        if kp == ord('s'):
-            m.movePacman((0, -1))
+            if kp == ord('s'):
+                lastUpdatePacman += PACMAN_UPADTE_TIME
+                m.movePacman((0, -1))
 
-        if kp == ord('d'):
-            m.movePacman((1, 0))
+            if kp == ord('d'):
+                lastUpdatePacman += PACMAN_UPADTE_TIME
+                m.movePacman((1, 0))
+
+        # if m.checkGameComplete():
+        #     print("Game Over")
+        #     break
 
         cv2.imshow("Map", m.generateImage())
+        cv2.imshow("Test", m.generateTestImage())
+        
         cv2.imshow("Occupancy Map", m.probabilityMap.cv_map)
+
 
         if kp & 0xFF == ord('q'):
             break 
+
+
+    while True:
+        # End Screen, no inputs
+        cv2.imshow("Map", m.generateImage())
+        cv2.imshow("Occupancy Map", m.probabilityMap.cv_map)
+
+        kp = cv2.waitKey(1)
+        if kp & 0xFF == ord('q'):
+            break 
+

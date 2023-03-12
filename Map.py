@@ -142,8 +142,6 @@ class Map:
         self.coloring = np.copy(self.defaultColoring)
         self.futureColoring = np.copy(self.defaultColoring)
 
-        self.testColoring = np.zeros_like(self.futureColoring)
-
         self.frame = self.generateImageFromScratch()
 
         self.path = []
@@ -265,15 +263,7 @@ class Map:
             for y in range(self.h):
                 if differentProbs[x, y]:
                     self.futureColoring[x, y] = self.getTileColoring(x, y, newProbs[x, y])
-
-    def generateTestImage(self):
-        blankImage = np.zeros((SF * self.h, SF * self.w, 3))
-        for x in range(self.w):
-            for y in range(self.h):
-                blankImage = self.colorLocationInternal(blankImage, (x, y), self.testColoring[x, y])
-
-        return cv2.flip(blankImage, 0)
-                   
+      
     def getTileColoring(self, x, y, newProb):
         if self.isWall((x, y)):
             # If wall, 
@@ -338,7 +328,6 @@ if __name__ == "__main__":
         #     break
 
         cv2.imshow("Map", m.generateImage())
-        cv2.imshow("Test", m.generateTestImage())
         
         cv2.imshow("Occupancy Map", m.probabilityMap.cv_map)
 

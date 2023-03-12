@@ -328,7 +328,6 @@ if __name__ == "__main__":
         #     break
 
         cv2.imshow("Map", m.generateImage())
-        
         cv2.imshow("Occupancy Map", m.probabilityMap.cv_map)
 
 

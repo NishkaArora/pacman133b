@@ -11,7 +11,7 @@ L_OCCUPIED = 0.3
 
 ### Laser Properties ###
 # distance
-SEARCH_RAD = 3
+SEARCH_RAD = 10
 
 # angles
 # DTHETA = 30
@@ -40,43 +40,24 @@ class OccupancyMap:
         cx, cy = new_loc
 
         # create rays around pacman
-
-        def add_to_rays(x, y):
-
-            x_right = min(x+SEARCH_RAD, self.w-1)
-            x_left = max(0, x-SEARCH_RAD)
-
-            y_up = min(y+SEARCH_RAD, self.h-1)
-            y_down = max(0, y-SEARCH_RAD)
-
-            return set([(x, y_up), (x, y_down), (x_right, y), (x_left, y)])
-
-        rays = add_to_rays(cx, cy)
-
-        # trace each ray
-        for ray in rays:
-            endx, endy = ray
-            #self.logodds_map[endx, endy] -= L_FREE
-
-            if cx == endx:
-                # trace in y direction
-                for y in range(cy, endy-1 if cy>endy else endy+1, -1 if cy > endy else 1):
-
-                    if not self.true_map[cx, y]: # not a wall
-                        self.logodds_map[cx, y] -=L_FREE
-                    else:
-                        self.logodds_map[cx, y] += L_OCCUPIED
+        for move in [(0, 1), (1, 0), (-1, 0), (0, -1)]:
+            dx, dy = move
+            for step in range(0, SEARCH_RAD+1, 1): 
+                # start at 0 or 1 depending on what makes sense, 
+                # i think 0 makes more sense for our case because
+                # if pacman is standing on a box its definitely free
+                cur_x, cur_y = cx+step*dx, cy+step*dy
+                if cur_x in range(0, self.w) and cur_y in range(0, self.h):
+                    if self.true_map[cur_x, cur_y]:
+                        self.logodds_map[cur_x, cur_y] += L_OCCUPIED
+                        # obstacle reached
                         break
-
-            elif cy == endy:
-                # trace in x direction
-                for x in range(cx, endx-1 if cx>endx else endx+1, -1 if cx > endx else 1):
-                    if not self.true_map[x, cy]: # not a wall
-                        self.logodds_map[x, cy] -=L_FREE
                     else:
-                        self.logodds_map[x, cy] += L_OCCUPIED
-                        break               
-
+                        self.logodds_map[cur_x, cur_y] -= L_FREE
+                else:
+                    # we're at the ends of the map
+                    break
+        
         self.cv_map = self.generateOccupancyMap()
 
     def generateOccupancyMap(self):
@@ -208,4 +189,43 @@ def add_to_rays(x, y):
 
                 err = err + dv
                 uk = uk + su
+
+
+
+                def add_to_rays(x, y):
+
+            x_right = min(x+SEARCH_RAD, self.w-1)
+            x_left = max(0, x-SEARCH_RAD)
+
+            y_up = min(y+SEARCH_RAD, self.h-1)
+            y_down = max(0, y-SEARCH_RAD)
+
+            return set([(x, y_up), (x, y_down), (x_right, y), (x_left, y)])
+
+        rays = add_to_rays(cx, cy)
+
+        # trace each ray
+        for ray in rays:
+            endx, endy = ray
+            #self.logodds_map[endx, endy] -= L_FREE
+
+            if cx == endx:
+                # trace in y direction
+                for y in range(cy, endy-1 if cy>endy else endy+1, -1 if cy > endy else 1):
+                    if not self.true_map[cx, y]: # not a wall
+                        self.logodds_map[cx, y] -=L_FREE
+                    else:
+                        self.logodds_map[cx, y] += L_OCCUPIED
+                        break
+
+            elif cy == endy:
+                # trace in x direction
+                for x in range(cx, endx-1 if cx>endx else endx+1, -1 if cx > endx else 1):
+                    if not self.true_map[x, cy]: # not a wall
+                        self.logodds_map[x, cy] -=L_FREE
+                    else:
+                        self.logodds_map[x, cy] += L_OCCUPIED
+                        break               
+
+        self.cv_map = self.generateOccupancyMap()
 """

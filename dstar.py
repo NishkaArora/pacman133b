@@ -50,10 +50,14 @@ class State:
 
 # pacman map where each box is a node with a cost, state, and set of neighbors
 class Pacman_Map:
-    def __init__(self, M, N):
+    def __init__(self, M, N, pacman_start, pellet_locations):
         self.h = N
         self.w = M
         self.wallMap = [[State(m,n) for n in range(N)] for m in range(M)]
+        self.pacman_position = pacman_start
+        self.pellet_locations = pellet_locations
+        self.pellet_idx = choose_closest_pellet_initial(pacman_start, self.pellet_locations)# 0
+        self.pellet_goal = self.wallMap[pellet_locations[self.pellet_idx][0]][pellet_locations[self.pellet_idx][1]]
         
         # setting initial costs and states
         for x in range(self.w):
@@ -90,7 +94,7 @@ def costtogo(state, goal):
     return state.distance(goal)
 
 # initial dstar
-def dstar_start(start, goal, pacman_map, original_map):
+def astar(start, goal, pacman_map, original_map):
     
     # resetting the map by setting all nodes to UNKNOWN state
     pacman_map.restart_map()
@@ -102,8 +106,8 @@ def dstar_start(start, goal, pacman_map, original_map):
     onDeck.append(goal)
     
     # finding path
-    onDeck, path = process(start, goal, original_map, onDeck)
-    return onDeck, path
+    path = process(start, goal, original_map, onDeck)
+    return path
 
 # dstar if there is an update to the map (currently there is not)
 def dstar_later(start, goal, pacman_map, original_map, old_map, onDeck, path):
@@ -143,18 +147,16 @@ def dstar_later(start, goal, pacman_map, original_map, old_map, onDeck, path):
     start.status = State.ONDECKREMOVE
     # start.parent = None
     bisect.insort(onDeck, start)
-    onDeck, path = process(start, goal, original_map, onDeck)
-    return onDeck, path
+    path = process(start, goal, original_map, onDeck)
+    return path
     
 # taken from gunter notes
 def process(start, goal, original_map, onDeck):
     
     # getting probability map 
     prob_map = original_map.probabilityMap.get_prob_map()
-    a = True
     # starting loop
-    while a:
-    #while len(onDeck) != 0:
+    while len(onDeck) != 0:
         node = onDeck.pop(0)
         # if node meant to expand
         if node.status == State.ONDECKEXPAND:
@@ -190,8 +192,7 @@ def process(start, goal, original_map, onDeck):
             
             # if start node found, stop process
             if node == start:
-                a = False
-                continue
+                break
         
         # if node meant to removed
         elif node.status == State.ONDECKREMOVE:
@@ -203,6 +204,7 @@ def process(start, goal, original_map, onDeck):
                     status = State.ONDECKEXPAND
                     onDeck = update_node_remove(onDeck, neighbor, status)
             node.status = State.UNKNOWN
+
     print("Marking path...")
     node = start.parent
     node.status = State.PATH
@@ -212,7 +214,7 @@ def process(start, goal, original_map, onDeck):
         path.append([node.row, node.col])
         node = node.parent
     original_map.highlightPath(path, GREEN)
-    return onDeck, path
+    return path
 
 # calculate the cost of the path
 def calculate_cost(path, pacman_map):
@@ -227,14 +229,14 @@ def get_new_pellet(pellet_locations, pellet_idx, pacman_map, start, original_map
     # removing old pellet from possible locations
     old_pellet_x = pellet_locations[pellet_idx][0]
     old_pellet_y = pellet_locations[pellet_idx][1]
-    pellet_locations.remove([old_pellet_x, old_pellet_y])
+    pacman_map.pellet_locations.remove([old_pellet_x, old_pellet_y])
     
     # getting a goal
     pellet_idx = 0
     pellet_goal = get_pellet_node(pellet_locations, 0, pacman_map)
     
     # running dstart to find path and cost of path
-    onDeck_new, path_new = dstar_start(start, pellet_goal, pacman_map, original_map)
+    path_new = astar(start, pellet_goal, pacman_map, original_map)
     min_cost = calculate_cost(path_new, pacman_map)
     
     # iterating through all pellets to see which path has lowest cost
@@ -242,7 +244,7 @@ def get_new_pellet(pellet_locations, pellet_idx, pacman_map, start, original_map
         
         # finding path to newest pellet
         pellet_goal = get_pellet_node(pellet_locations, i, pacman_map)
-        onDeck_new, path_new = dstar_start(start, pellet_goal, pacman_map, original_map)
+        path_new = astar(start, pellet_goal, pacman_map, original_map)
         
         # finding cost of path and comparing
         new_cost = calculate_cost(path_new, pacman_map)
@@ -290,3 +292,32 @@ def choose_closest_pellet(start, pellet_locations, pacman_map):
             pellet_idx = idx
             lowest_cost = new_cost
     return pellet_idx
+
+def choose_closest_pellet_initial(start, pellet_locations):
+    pellet_idx = 0
+    pellet_x = pellet_locations[pellet_idx][0] 
+    pellet_y = pellet_locations[pellet_idx][1]
+    lowest_cost = abs(start[0] - pellet_x) + abs(start[1] - pellet_y)
+    for idx in range(len(pellet_locations)):
+        pellet_x = pellet_locations[idx][0] 
+        pellet_y = pellet_locations[idx][1]
+        new_cost = abs(start[0] - pellet_x) + abs(start[1] - pellet_y)
+        if new_cost < lowest_cost:
+            pellet_idx = idx
+            lowest_cost = new_cost
+    return pellet_idx
+
+def run_a_star(original_map, pacman_map):
+    curr_pacmamn_pos = get_node(original_map.pacmanLocation, 
+                                            pacman_map)
+    if curr_pacmamn_pos == pacman_map.pellet_goal:
+        pacman_map.pellet_locations, pacman_map.pellet_idx = get_new_pellet(
+                                        pacman_map.pellet_locations, 
+                                        pacman_map.pellet_idx, pacman_map, 
+                                        curr_pacmamn_pos, 
+                                        original_map)
+        pacman_map.pellet_goal = get_pellet_node(pacman_map.pellet_locations, 
+                                        pacman_map.pellet_idx, pacman_map)
+    astar(curr_pacmamn_pos, pacman_map.pellet_goal, pacman_map, original_map)
+    pacman_map.pellet_idx = choose_closest_pellet(curr_pacmamn_pos, pacman_map.pellet_locations, pacman_map)
+    pacman_map.pellet_goal = get_pellet_node(pacman_map.pellet_locations, pacman_map.pellet_idx, pacman_map)

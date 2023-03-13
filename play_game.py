@@ -81,13 +81,11 @@ if __name__ == "__main__":
                 # finds the places in the map that have changed (change to ones 
                 # that are looked at from nishka)
                 curr_prob_map = original_map.probabilityMap.get_prob_map()
-                
-                
-                
-                for x,y in path:
-                    if old_occup_map[x,y] != curr_prob_map[x, y]:
-                        change = True
-                    # changed_places.append([x,y])
+            
+                # for x,y in path:
+                #     if old_occup_map[x,y] != curr_prob_map[x, y]:
+                #         change = True
+                #     # changed_places.append([x,y])
 
                 curr_pacmamn_pos = get_node(original_map.pacmanLocation, 
                                             pacman_map)

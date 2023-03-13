@@ -7,7 +7,7 @@ import cv2
 INIT_VAL = 0.3
 L_FREE = 0.05
 #L_IWASHERE = 0.1
-L_OCCUPIED = 0.3
+L_OCCUPIED = 0.9
 
 ### Laser Properties ###
 # distance

@@ -72,7 +72,7 @@ class GhostTrueMap:
             # count number of boxes to spread to
             for move in [(0, 1), (1, 0), (-1, 0), (0, -1)]:
                 dx, dy = move
-                if x+dx in range(0, self.w) and x+dy in range(0, self.h) and self.true_map[x+dx, y+dy] == 0:
+                if x+dx in range(0, self.w) and y+dy in range(0, self.h) and self.true_map[x+dx, y+dy] == 0:
                     num_spread += 1
                     valid_moves.append(move)
             

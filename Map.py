@@ -107,7 +107,6 @@ SF = 25
 pacmanSprite = cv2.imread('pacman.png', cv2.IMREAD_COLOR)
 ghostSprite = cv2.imread('ghost.png', cv2.IMREAD_COLOR)
 
-
 class Map:
     def __init__(self, spawnPoint, probabilityMap=True, nGhosts = 4, ghostPing = 3):
         self.h = len(walls)
@@ -152,6 +151,20 @@ class Map:
 
         self.path = []
         self.pathColor = RED
+
+        if probabilityMap:
+            self.probabilityMap = OccupancyMap(self)
+
+    def colorGhostMaps(self, futureColoring):
+        for (i, ghostMap) in enumerate(self.ghostMaps):
+            impPoints = self.ghostMaps.prob_map > 0.001
+
+            for x in range(self.w):
+                for y in range(self.h):
+                    pass 
+
+
+        return futureColoring
 
     def generatePacman(self, frame):
         x, y = self.pacmanLocation

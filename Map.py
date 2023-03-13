@@ -135,7 +135,7 @@ class Map:
 
         self.ghosts = [Ghost(self, ghostLocations[i], ghostPing, id=i) for i in range(nGhosts)]
 
-        self.ghostMaps = [GhostMap(ghost, self.w, self.h) for ghost in self.ghosts]
+        self.ghostMaps = [GhostMap(ghost, self.w, self.h, self.wallMap) for ghost in self.ghosts]
 
         self.ghostSprite = cv2.flip(cv2.resize(ghostSprite, (SF, SF)), 0)
 
@@ -250,6 +250,7 @@ class Map:
             if self.probabilityMap is not None:
                 prevProbs = self.probabilityMap.get_prob_map() # Ensure this is only for the "explored" probability, not for the ghost map
                 self.probabilityMap.update()
+                m.ghostMaps[0].updateSpread()
                 newProbs = self.probabilityMap.get_prob_map()
                 self.updateColorsProbability(prevProbs, newProbs)
 
@@ -284,12 +285,12 @@ class Map:
 
 
 if __name__ == "__main__":
-    GHOST_PING_TIME = 2 # ghost ping sent every 3 minutes 
+    GHOST_PING_TIME = 5
 
     m = Map((3, 4), ghostPing=GHOST_PING_TIME)
     i = 0
 
-    GHOST_UPDATE_TIME = 0.3 # 2 seconds for each ghost update
+    GHOST_UPDATE_TIME = 1
     PACMAN_UPADTE_TIME = 0.1
     lastUpdatePacman = time.time()
     lastUpdateGhost = time.time()
@@ -301,8 +302,8 @@ if __name__ == "__main__":
             m.moveGhost()
 
         kp = cv2.waitKey(1)
-
         if currentTime - lastUpdatePacman > PACMAN_UPADTE_TIME:
+            
             if kp == ord('w'):
                 lastUpdatePacman += PACMAN_UPADTE_TIME
                 m.movePacman((0, 1))
@@ -317,19 +318,18 @@ if __name__ == "__main__":
 
             if kp == ord('d'):
                 lastUpdatePacman += PACMAN_UPADTE_TIME
-                m.movePacman((1, 0))
+                m.movePacman((1, 0)) 
         
         m.ghosts[0].updatePingStatus()
-        
-        m.ghostMaps[0].updateMap()
+        m.ghostMaps[0].updatePing()
 
         # if m.checkGameComplete():
         #     print("Game Over")
         #     break
 
         cv2.imshow("Map", m.generateImage())
-        cv2.imshow("Occupancy Map", m.probabilityMap.cv_map)
-
+        #cv2.imshow("Occupancy Map", m.probabilityMap.cv_map)
+        cv2.imshow("Ghost map", m.ghostMaps[0].cv_map)
 
         if kp & 0xFF == ord('q'):
             break 

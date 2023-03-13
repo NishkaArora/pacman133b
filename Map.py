@@ -139,7 +139,9 @@ class Map:
 
         self.ghosts = [Ghost(self, ghostLocations[i], ghostPing, id=i) for i in range(nGhosts)]
 
-        self.ghostMaps = [GhostMap(ghost, self.w, self.h, self.wallMap) for ghost in self.ghosts]
+        self.probabilityMap = OccupancyMap(self)
+
+        self.ghostMaps = [GhostMap(ghost, self.w, self.h, self.probabilityMap) for ghost in self.ghosts]
 
         self.ghostSprite = cv2.flip(cv2.resize(ghostSprite, (SF, SF)), 0)
 
@@ -150,9 +152,6 @@ class Map:
 
         self.path = []
         self.pathColor = RED
-
-        if probabilityMap:
-            self.probabilityMap = OccupancyMap(self)
 
     def generatePacman(self, frame):
         x, y = self.pacmanLocation

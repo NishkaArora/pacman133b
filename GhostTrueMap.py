@@ -82,26 +82,3 @@ class GhostTrueMap:
                 dx, dy = move
                 new_prob_map[x+dx, y+dy] += prob_each
 
-"""
-    def get_prob_map(self):
-        convert_to_p = lambda l : math.exp(l) / (math.exp(l) + 1.0)
-        prob_map = np.array([[convert_to_p(l) for l in row] for row in self.logodds_map])
-        return prob_map
-    def updateValue(self, cur_pos, ghost_heading, num_moves):
-        # implement map updates however you want
-        cx, cy = cur_pos
-        sq_up = min(cy + num_moves, self.h - 1)
-        sq_down = max(cy - num_moves, 0)
-        sq_left = max(cx - num_moves, 0)
-        sq_right = min(cx + num_moves, self.w - 1)
-
-        for pos_y in range(sq_down, sq_up+1):
-            for pos_x in range(sq_left, sq_right+1):
-                if (pos_x, pos_y) != (cx, cy):
-                    future_vector = np.array((pos_x - cx, pos_y - cy))
-                    cos_sim = (future_vector @ ghost_heading.T) / (norm(future_vector)*norm(ghost_heading))
-                    cos_sim = (cos_sim+2)/3 # scale to be from 0 to 1
-                    self.logoddsmap[pos_x, pos_y] = cos_sim*UPDATE_SCALE + UPDATE_CONST
-            
-        self.ghost_map = self.get_prob_map()
-"""

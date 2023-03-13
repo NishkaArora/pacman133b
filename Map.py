@@ -8,6 +8,10 @@ from occupancymap import OccupancyMap
 from GhostMap import GhostMap
 from colour import Color 
 
+from dstar import Pacman_Map, run_a_star
+
+
+
 # from playsound import playsound
 # from threading import Thread
  
@@ -137,7 +141,9 @@ class Map:
 
         self.ghosts = [Ghost(self, ghostLocations[i], ghostPing, id=i) for i in range(nGhosts)]
 
-        self.ghostMaps = [GhostMap(ghost, self.w, self.h, self.wallMap) for ghost in self.ghosts]
+        self.probabilityMap = OccupancyMap(self)
+
+        self.ghostMaps = [GhostMap(ghost, self.w, self.h, self.probabilityMap) for ghost in self.ghosts]
 
         self.ghostSprite = cv2.flip(cv2.resize(ghostSprite, (SF, SF)), 0)
 
@@ -262,13 +268,12 @@ class Map:
             return False
         
         else:
-            if self.probabilityMap is not None:
-                prevProbs = self.probabilityMap.get_prob_map() # Ensure this is only for the "explored" probability, not for the ghost map
-                self.probabilityMap.update()
-                newProbs = self.probabilityMap.get_prob_map()
-                self.updateColorsProbability(prevProbs, newProbs)
-
+            # if self.probabilityMap is not None:
+            prevProbs = self.probabilityMap.get_prob_map() # Ensure this is only for the "explored" probability, not for the ghost map
             self.pacmanLocation = (xf, yf)
+            self.probabilityMap.update()
+            newProbs = self.probabilityMap.get_prob_map()
+            self.updateColorsProbability(prevProbs, newProbs)
         return True
 
     def updateColorsProbability(self, prevProbs, newProbs):
@@ -303,11 +308,13 @@ if __name__ == "__main__":
     GHOST_PING_TIME = 5
 
     m = Map((3, 4), ghostPing=GHOST_PING_TIME)
+    pellet_locations = [[21, 20], [10, 10], [15, 19]]
+    pacman_map = Pacman_Map(m.w, m.h, (3, 4), pellet_locations)
     i = 0
 
-    GHOST_UPDATE_TIME = 1
+    GHOST_UPDATE_TIME = 1#00000
     PACMAN_UPADTE_TIME = 0.1
-    GHOST_MAP_UPDATE_TIME = 0.5
+    GHOST_MAP_UPDATE_TIME =  0.5
 
     lastUpdatePacman = time.time()
     lastUpdateGhost = time.time()
@@ -325,18 +332,22 @@ if __name__ == "__main__":
             if kp == ord('w'):
                 lastUpdatePacman += PACMAN_UPADTE_TIME
                 m.movePacman((0, 1))
+                run_a_star(m, pacman_map)
 
             if kp == ord('a'):
                 lastUpdatePacman += PACMAN_UPADTE_TIME
                 m.movePacman((-1, 0))
+                run_a_star(m, pacman_map)
 
             if kp == ord('s'):
                 lastUpdatePacman += PACMAN_UPADTE_TIME
                 m.movePacman((0, -1))
+                run_a_star(m, pacman_map)
 
             if kp == ord('d'):
                 lastUpdatePacman += PACMAN_UPADTE_TIME
                 m.movePacman((1, 0)) 
+                run_a_star(m, pacman_map)
         
         if currentTime - lastUpdateGhostLocations > GHOST_MAP_UPDATE_TIME:
             m.ghostMaps[0].updateSpread()

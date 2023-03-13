@@ -5,16 +5,18 @@ import Ghost
 from math import dist
 import math
 from numpy.linalg import norm
+from occupancymap import OccupancyMap
 
 SF = 25
 
 class GhostMap:
-    def __init__(self, ghost, w, h, wall_map):
+    def __init__(self, ghost, w, h, occ_map):
         # ghost map
         self.ghost = ghost
         self.h, self.w = h, w
 
-        self.true_map = wall_map
+        # wall occupancy probability map
+        self.occ_map = occ_map
 
         # 0 probability of ghost being anywhere
         self.prob_map = np.zeros((self.w, self.h))
@@ -35,7 +37,7 @@ class GhostMap:
     
     def colorLocation(self, frame, location, prob):
         x, y = location
-        color = (prob*10, prob*10, prob*10)
+        color = (prob, prob, prob)
         return cv2.rectangle(frame, (x*SF, y*SF), ((x+1)*SF, (y+1)*SF), color, -1)
 
     def updatePing(self):
@@ -66,42 +68,22 @@ class GhostMap:
         
 
     def spread(self, x, y, new_prob_map):
-            prob_og = self.prob_map[x, y]
-            valid_moves = [(0, 0)]
-            num_spread = 1
+            prob_walls = self.occ_map.get_prob_map()
+            prob_og = prob_walls[x, y]
+            valid_moves = [(0, 0)] # current spot is definitely free
+            prob_each = [1]
+
             # count number of boxes to spread to
-            for move in [(0, 1), (1, 0), (-1, 0), (0, -1)]:
+            for move in [(0, 1), (1, 0), (-1, 0), (0, -1)]: # ghost moves
                 dx, dy = move
-                if x+dx in range(0, self.w) and x+dy in range(0, self.h) and self.true_map[x+dx, y+dy] == 0:
-                    num_spread += 1
+
+                if x+dx in range(0, self.w) and y+dy in range(0, self.h): # if ghost move stays on map
                     valid_moves.append(move)
+                    prob_each.append(1-prob_walls[x+dx, y+dy])
+                
+            prob_each = (np.array(prob_each)*prob_og)/sum(prob_each) # normalize so that ghost maps adds up to the right number
             
             # spread to the valid moves
-            prob_each = prob_og / num_spread
-            for move in valid_moves:
+            for move, prob in zip(valid_moves, prob_each):
                 dx, dy = move
-                new_prob_map[x+dx, y+dy] += prob_each
-
-"""
-    def get_prob_map(self):
-        convert_to_p = lambda l : math.exp(l) / (math.exp(l) + 1.0)
-        prob_map = np.array([[convert_to_p(l) for l in row] for row in self.logodds_map])
-        return prob_map
-    def updateValue(self, cur_pos, ghost_heading, num_moves):
-        # implement map updates however you want
-        cx, cy = cur_pos
-        sq_up = min(cy + num_moves, self.h - 1)
-        sq_down = max(cy - num_moves, 0)
-        sq_left = max(cx - num_moves, 0)
-        sq_right = min(cx + num_moves, self.w - 1)
-
-        for pos_y in range(sq_down, sq_up+1):
-            for pos_x in range(sq_left, sq_right+1):
-                if (pos_x, pos_y) != (cx, cy):
-                    future_vector = np.array((pos_x - cx, pos_y - cy))
-                    cos_sim = (future_vector @ ghost_heading.T) / (norm(future_vector)*norm(ghost_heading))
-                    cos_sim = (cos_sim+2)/3 # scale to be from 0 to 1
-                    self.logoddsmap[pos_x, pos_y] = cos_sim*UPDATE_SCALE + UPDATE_CONST
-            
-        self.ghost_map = self.get_prob_map()
-"""
+                new_prob_map[x+dx, y+dy] += prob

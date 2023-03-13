@@ -102,8 +102,6 @@ SF = 25
 # Please be in the correct folder (run it outside of pacman133b)
 pacmanSprite = cv2.imread('pacman.png', cv2.IMREAD_COLOR)
 ghostSprite = cv2.imread('ghost.png', cv2.IMREAD_COLOR)
-pacmanSprite = cv2.imread('pacman.png', cv2.IMREAD_COLOR)
-ghostSprite = cv2.imread('ghost.png', cv2.IMREAD_COLOR)
 
 
 class Map:

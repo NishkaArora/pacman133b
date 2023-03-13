@@ -5,17 +5,13 @@ import cv2
 
 # Log-odds Ratio Constants
 INIT_VAL = 0.3
-L_FREE = 0.05
-#L_IWASHERE = 0.1
-L_OCCUPIED = 0.3
+L_FREE = 0.1
+L_OCCUPIED = 0.9
 
 ### Laser Properties ###
-# distance
 SEARCH_RAD = 10
 
-# angles
-# DTHETA = 30
-# thetas = np.arange(0, 360, DTHETA)
+### block size ###
 SF = 25
 
 

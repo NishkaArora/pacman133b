@@ -6,7 +6,6 @@ from Ghost import Ghost
 import time
 from occupancymap import OccupancyMap
 from GhostMap import GhostMap
-from colour import Color 
 
 from dstar import Pacman_Map, run_a_star
 
@@ -101,8 +100,6 @@ RED = (0, 0, 255)
 BLUE = (255, 0, 0)
 PACMAN = (1000, 1000, 1000) # Some non RGB number
 GHOST = (-1, -1, -1)
-
-GHOST_COLORS = [Color(hsv=(322, 87, 100))]
 
 SF = 25
 

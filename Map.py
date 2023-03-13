@@ -250,7 +250,6 @@ class Map:
             if self.probabilityMap is not None:
                 prevProbs = self.probabilityMap.get_prob_map() # Ensure this is only for the "explored" probability, not for the ghost map
                 self.probabilityMap.update()
-                m.ghostMaps[0].updateSpread()
                 newProbs = self.probabilityMap.get_prob_map()
                 self.updateColorsProbability(prevProbs, newProbs)
 
@@ -292,8 +291,11 @@ if __name__ == "__main__":
 
     GHOST_UPDATE_TIME = 1
     PACMAN_UPADTE_TIME = 0.1
+    GHOST_MAP_UPDATE_TIME = 0.5
+
     lastUpdatePacman = time.time()
     lastUpdateGhost = time.time()
+    lastUpdateGhostLocations = time.time()
 
     while True:
         currentTime = time.time()
@@ -320,6 +322,11 @@ if __name__ == "__main__":
                 lastUpdatePacman += PACMAN_UPADTE_TIME
                 m.movePacman((1, 0)) 
         
+        if currentTime - lastUpdateGhostLocations > GHOST_MAP_UPDATE_TIME:
+            m.ghostMaps[0].updateSpread()
+            lastUpdateGhostLocations += GHOST_MAP_UPDATE_TIME
+
+
         m.ghosts[0].updatePingStatus()
         m.ghostMaps[0].updatePing()
 

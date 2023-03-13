@@ -1,14 +1,11 @@
 # Bresenham's inspired circle algorithm: https://stackoverflow.com/questions/1201200/fast-algorithm-for-drawing-filled-circles
 """
 Bitmap bmp = new Bitmap(200, 200);
-
 int r = 50; // radius
 int ox = 100, oy = 100; // origin
-
 for (int x = -r; x < r ; x++)
 {
     int height = (int)Math.Sqrt(r * r - x * x);
-
     for (int y = -height; y < height; y++)
         bmp.SetPixel(x + ox, y + oy, Color.Red);
 }

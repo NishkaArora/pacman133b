@@ -1,3 +1,4 @@
+
 import numpy as np
 import time
 
@@ -52,6 +53,3 @@ class Ghost:
         self.updatePingStatus()
 
         return (self.id, self.position) # Need to translate and add some varience
-
-
-

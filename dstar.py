@@ -311,6 +311,8 @@ def run_a_star(original_map, pacman_map):
     curr_pacmamn_pos = get_node(original_map.pacmanLocation, 
                                             pacman_map)
     if curr_pacmamn_pos == pacman_map.pellet_goal:
+        if len(pacman_map.pellet_locations) == 1:
+            return False
         pacman_map.pellet_locations, pacman_map.pellet_idx = get_new_pellet(
                                         pacman_map.pellet_locations, 
                                         pacman_map.pellet_idx, pacman_map, 
@@ -318,6 +320,7 @@ def run_a_star(original_map, pacman_map):
                                         original_map)
         pacman_map.pellet_goal = get_pellet_node(pacman_map.pellet_locations, 
                                         pacman_map.pellet_idx, pacman_map)
-    astar(curr_pacmamn_pos, pacman_map.pellet_goal, pacman_map, original_map)
+    path = astar(curr_pacmamn_pos, pacman_map.pellet_goal, pacman_map, original_map)
     pacman_map.pellet_idx = choose_closest_pellet(curr_pacmamn_pos, pacman_map.pellet_locations, pacman_map)
     pacman_map.pellet_goal = get_pellet_node(pacman_map.pellet_locations, pacman_map.pellet_idx, pacman_map)
+    return path, True

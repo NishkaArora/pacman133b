@@ -316,22 +316,30 @@ if __name__ == "__main__":
             if kp == ord('w'):
                 lastUpdatePacman += PACMAN_UPADTE_TIME
                 m.movePacman((0, 1))
-                run_a_star(m, pacman_map)
+                path, go = run_a_star(m, pacman_map)
+                if not go:
+                    break
 
             if kp == ord('a'):
                 lastUpdatePacman += PACMAN_UPADTE_TIME
                 m.movePacman((-1, 0))
-                run_a_star(m, pacman_map)
+                path, go = run_a_star(m, pacman_map)
+                if not go:
+                    break
 
             if kp == ord('s'):
                 lastUpdatePacman += PACMAN_UPADTE_TIME
                 m.movePacman((0, -1))
-                run_a_star(m, pacman_map)
+                path, go = run_a_star(m, pacman_map)
+                if not go:
+                    break
 
             if kp == ord('d'):
                 lastUpdatePacman += PACMAN_UPADTE_TIME
                 m.movePacman((1, 0)) 
-                run_a_star(m, pacman_map)
+                path, go = run_a_star(m, pacman_map)
+                if not go:
+                    break
         
         if currentTime - lastUpdateGhostLocations > GHOST_MAP_UPDATE_TIME:
             m.ghostMaps[0].updateSpread()

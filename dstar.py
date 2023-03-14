@@ -55,7 +55,7 @@ class Pacman_Map:
         self.w = M
         self.wallMap = [[State(m,n) for n in range(N)] for m in range(M)]
         self.pacman_position = pacman_start
-        self.pellet_locations = pellet_locations
+        self.pellet_locations = pellet_locations 
         self.pellet_idx = choose_closest_pellet_initial(pacman_start, self.pellet_locations)# 0
         self.pellet_goal = self.wallMap[pellet_locations[self.pellet_idx][0]][pellet_locations[self.pellet_idx][1]]
         

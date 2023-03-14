@@ -147,7 +147,6 @@ def astar(start, goal, pacman_map, original_map, frame):
         a, new_start = non_admissable(onDeck, new_start, goal, a)
 
     # Create the path to the goal (backwards) and show.
-    print("Marking path...")
     #############
     node = goal
     node.status = State.PATH

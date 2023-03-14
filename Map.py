@@ -6,9 +6,10 @@ from Ghost import Ghost
 import time
 from occupancymap import OccupancyMap
 from GhostMap import GhostMap
+from GhostTrueMap import GhostTrueMap
 
 from dstar import Pacman_Map, run_a_star
-
+from colour import Color
 
 
 # from playsound import playsound
@@ -100,8 +101,23 @@ RED = (0, 0, 255)
 BLUE = (255, 0, 0)
 PACMAN = (1000, 1000, 1000) # Some non RGB number
 GHOST = (-1, -1, -1)
+PINK = Color(hsl=(320/360, 1, 0.5))
+BLUE = Color(hsl=(215/360, 1, 0.5))
+GREEN = Color(hsl=(150/360, 1, 0.5))
+ORANGE = Color(hsl=(25/360, 1, 0.5))
 
 SF = 25
+
+def interpolate(gray, color, p):
+    g = gray 
+    h = color.get_hue()
+    s = (p) * color.get_saturation()
+    
+    ogl = color.get_luminance()
+    l = ogl + (g - ogl) * (1 - p) 
+    a = Color(hsl=(h,s,l))
+    return (a.get_blue(), a.get_green(), a.get_red())
+
 
 # Please be in the correct folder (run it outside of pacman133b)
 pacmanSprite = cv2.imread('pacman.png', cv2.IMREAD_COLOR)
@@ -111,6 +127,10 @@ class Map:
     def __init__(self, spawnPoint, probabilityMap=True, nGhosts = 4, ghostPing = 3):
         self.h = len(walls)
         self.w = len(walls[0])
+
+        self.ghostColors = [PINK, BLUE, GREEN, ORANGE]
+
+        self.pellet_locations = [[21, 20], [10, 10], [15, 19]]
 
         # print(self.h, self.w)
 
@@ -140,7 +160,7 @@ class Map:
 
         self.probabilityMap = OccupancyMap(self)
 
-        self.ghostMaps = [GhostMap(ghost, self.w, self.h, self.probabilityMap) for ghost in self.ghosts]
+        self.ghostMaps = [GhostTrueMap(ghost, self.w, self.h, self.wallMap) for ghost in self.ghosts]
 
         self.ghostSprite = cv2.flip(cv2.resize(ghostSprite, (SF, SF)), 0)
 
@@ -149,22 +169,28 @@ class Map:
 
         self.frame = self.generateImageFromScratch()
 
+        self.mapImage = np.copy(self.frame)
+
         self.path = []
         self.pathColor = RED
 
         if probabilityMap:
             self.probabilityMap = OccupancyMap(self)
 
-    def colorGhostMaps(self, futureColoring):
+    def colorGhostMaps(self, entityFrame):
+        claimed = np.zeros_like(self.ghostMaps[0].prob_map)
+
         for (i, ghostMap) in enumerate(self.ghostMaps):
-            impPoints = self.ghostMaps.prob_map > 0.001
+            impPoints = ghostMap.prob_map > 0.01
 
             for x in range(self.w):
                 for y in range(self.h):
-                    pass 
+                    if impPoints[x, y] and not claimed[x, y]:
+                        claimed[x, y] = 1
+                        color = interpolate(self.futureColoring[x, y][0], self.ghostColors[i], min(ghostMap.prob_map[x, y] * 4, 1))
+                        self.colorLocationInternal(entityFrame, (x, y), color)
 
-
-        return futureColoring
+        return entityFrame
 
     def generatePacman(self, frame):
         x, y = self.pacmanLocation
@@ -194,34 +220,46 @@ class Map:
         # Save a "prev future coloring"
         self.defaultColoring = np.copy(self.futureColoring)
 
-        self.futureColoring[self.pacmanLocation] = PACMAN
-        for ghost in self.ghosts:
-            self.futureColoring[ghost.position] = GHOST
-
-        for (x, y) in self.path:
-            self.futureColoring[x, y] = self.pathColor
+        # for (x, y) in self.path:
+        #     self.futureColoring[x, y] = self.pathColor
             
-        self.futureColoring[self.pacmanLocation] = PACMAN
-
         commonValues = self.futureColoring == self.coloring
 
         for x in range(self.w):
             for y in range(self.h):
                 if not commonValues[x, y].all():
-                    
-                    if (self.futureColoring[x, y] == PACMAN).all():
-                        self.frame = self.generatePacman(self.frame)
+                    self.frame = self.colorLocationInternal(self.frame, (x, y), self.futureColoring[x, y])
 
-                    elif (self.futureColoring[x, y] == GHOST).all():
-                        self.frame = self.generateGhosts(self.frame)
+        self.entityFrame = np.copy(self.frame)
+        self.entityFrame = self.colorGhostMaps(self.entityFrame)
 
-                    else:
-                        self.frame = self.colorLocationInternal(self.frame, (x, y), self.futureColoring[x, y])
+        for pellet in self.pellet_locations:
+            x, y = pellet
+            self.entityFrame = cv2.circle(self.entityFrame, (int((x + 1/2)*SF), int((y + 1/2)*SF)), int(SF * 0.2), (0, 255, 0), -1)
+        
+        self.entityFrame  = self.generatePacman(self.entityFrame)
+        self.entityFrame  = self.generateGhosts(self.entityFrame)
 
         self.coloring = np.copy(self.futureColoring)
         self.futureColoring = np.copy(self.defaultColoring) 
 
-        return cv2.flip(self.frame, 0)
+        return cv2.flip(self.entityFrame , 0)
+
+    def generateTotalImage(self):
+        toReturnImage = np.copy(self.mapImage)
+
+        for (x, y) in self.path:
+            toReturnImage = self.colorLocationInternal(toReturnImage, (x, y), self.pathColor)
+            
+
+        for pellet in self.pellet_locations:
+            x, y = pellet
+            toReturnImage = cv2.circle(toReturnImage, (int((x + 1/2)*SF), int((y + 1/2)*SF)), int(SF * 0.2), (0, 255, 0), -1)
+
+        toReturnImage  = self.generatePacman(toReturnImage)
+        toReturnImage  = self.generateGhosts(toReturnImage)
+
+        return cv2.flip(toReturnImage, 0)
     
     def colorLocationInternal(self, frame, location, color):
         # ONLY TO BE CALLED INTERNALLY PLEASE 
@@ -302,16 +340,16 @@ class Map:
 
 
 if __name__ == "__main__":
-    GHOST_PING_TIME = 5
+    GHOST_PING_TIME = 4
 
     m = Map((3, 4), ghostPing=GHOST_PING_TIME)
-    pellet_locations = [[21, 20], [10, 10], [15, 19]]
-    pacman_map = Pacman_Map(m.w, m.h, (3, 4), pellet_locations)
+    
+    pacman_map = Pacman_Map(m.w, m.h, (3, 4), m.pellet_locations)
     i = 0
 
-    GHOST_UPDATE_TIME = 1#00000
-    PACMAN_UPADTE_TIME = 0.1
-    GHOST_MAP_UPDATE_TIME =  0.5
+    GHOST_UPDATE_TIME = 1
+    PACMAN_UPADTE_TIME = 1
+    GHOST_MAP_UPDATE_TIME = 1
 
     lastUpdatePacman = time.time()
     lastUpdateGhost = time.time()
@@ -325,50 +363,62 @@ if __name__ == "__main__":
 
         kp = cv2.waitKey(1)
         if currentTime - lastUpdatePacman > PACMAN_UPADTE_TIME:
+            lastUpdatePacman += PACMAN_UPADTE_TIME
+            path, go = run_a_star(m, pacman_map)
             
-            if kp == ord('w'):
-                lastUpdatePacman += PACMAN_UPADTE_TIME
-                m.movePacman((0, 1))
-                path, go = run_a_star(m, pacman_map)
-                if not go:
-                    break
+            direction = (path[0][0] - m.pacmanLocation[0], path[0][1] - m.pacmanLocation[1])
 
-            if kp == ord('a'):
-                lastUpdatePacman += PACMAN_UPADTE_TIME
-                m.movePacman((-1, 0))
-                path, go = run_a_star(m, pacman_map)
-                if not go:
-                    break
 
-            if kp == ord('s'):
-                lastUpdatePacman += PACMAN_UPADTE_TIME
-                m.movePacman((0, -1))
-                path, go = run_a_star(m, pacman_map)
-                if not go:
-                    break
+            if not go:
+                break 
+            
+            m.movePacman(direction)
 
-            if kp == ord('d'):
-                lastUpdatePacman += PACMAN_UPADTE_TIME
-                m.movePacman((1, 0)) 
-                path, go = run_a_star(m, pacman_map)
-                if not go:
-                    break
+            # if kp == ord('w'):
+            #     lastUpdatePacman += PACMAN_UPADTE_TIME
+            #     m.movePacman((0, 1))
+            #     path, go = run_a_star(m, pacman_map)
+            #     if not go:
+            #         break
+
+            # if kp == ord('a'):
+            #     lastUpdatePacman += PACMAN_UPADTE_TIME
+            #     m.movePacman((-1, 0))
+            #     path, go = run_a_star(m, pacman_map)
+            #     if not go:
+            #         break
+
+            # if kp == ord('s'):
+            #     lastUpdatePacman += PACMAN_UPADTE_TIME
+            #     m.movePacman((0, -1))
+            #     path, go = run_a_star(m, pacman_map)
+            #     if not go:
+            #         break
+
+            # if kp == ord('d'):
+            #     lastUpdatePacman += PACMAN_UPADTE_TIME
+            #     m.movePacman((1, 0)) 
+            #     path, go = run_a_star(m, pacman_map)
+            #     if not go:
+            #         break
         
         if currentTime - lastUpdateGhostLocations > GHOST_MAP_UPDATE_TIME:
-            m.ghostMaps[0].updateSpread()
+            for i in range(len(m.ghosts)):
+                m.ghostMaps[i].updateSpread()
+
             lastUpdateGhostLocations += GHOST_MAP_UPDATE_TIME
 
+        for i in range(len(m.ghosts)):
+            m.ghosts[i].updatePingStatus()
+            m.ghostMaps[i].updatePing()
 
-        m.ghosts[0].updatePingStatus()
-        m.ghostMaps[0].updatePing()
-
-        # if m.checkGameComplete():
-        #     print("Game Over")
-        #     break
+        if m.checkGameComplete():
+            print("Game Over")
+            break
 
         cv2.imshow("Map", m.generateImage())
-        #cv2.imshow("Occupancy Map", m.probabilityMap.cv_map)
-        cv2.imshow("Ghost map", m.ghostMaps[0].cv_map)
+        cv2.imshow("Ghost map", m.ghostMaps[0].cv_map) # Ghost Map to Debug
+        cv2.imshow("Total Information Map", m.generateTotalImage())
 
         if kp & 0xFF == ord('q'):
             break 

@@ -54,7 +54,6 @@ class GhostMap:
             self.cv_map = self.generateGhostMap()
 
     def updateSpread(self):
-        print("spread")
         new_prob_map = np.zeros((self.w, self.h))
 
         # each pacman step, the prediction ghost position "spreads"

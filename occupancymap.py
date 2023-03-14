@@ -5,12 +5,12 @@ import cv2
 
 # Log-odds Ratio Constants
 INIT_VAL = 0.3
-L_FREE = 0.05
+L_FREE = 0.3
 #L_IWASHERE = 0.1
 L_OCCUPIED = 0.9
 
 ### Laser Properties ###
-SEARCH_RAD = 10
+SEARCH_RAD = 5
 
 ### block size ###
 SF = 25

@@ -160,7 +160,8 @@ class Map:
 
         self.probabilityMap = OccupancyMap(self)
 
-        self.ghostMaps = [GhostTrueMap(ghost, self.w, self.h, self.wallMap) for ghost in self.ghosts]
+        #self.ghostMaps = [GhostTrueMap(ghost, self.w, self.h, self.wallMap) for ghost in self.ghosts]
+        self.ghostMaps = [GhostMap(ghost, self.w, self.h, self.probabilityMap) for ghost in self.ghosts]
 
         self.ghostSprite = cv2.flip(cv2.resize(ghostSprite, (SF, SF)), 0)
 
@@ -173,9 +174,6 @@ class Map:
 
         self.path = []
         self.pathColor = RED
-
-        if probabilityMap:
-            self.probabilityMap = OccupancyMap(self)
 
     def colorGhostMaps(self, entityFrame):
         claimed = np.zeros_like(self.ghostMaps[0].prob_map)

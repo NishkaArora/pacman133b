@@ -224,7 +224,7 @@ def calculate_cost(path, pacman_map):
     return cost
 
 # getting the new pellet to go to
-def get_new_pellet(pellet_locations, pellet_idx, pacman_map, start, original_map):
+def get_new_pellet(pellet_locations, pellet_idx, pacman_map, start):
     
     # removing old pellet from possible locations
     old_pellet_x = pellet_locations[pellet_idx][0]
@@ -233,26 +233,35 @@ def get_new_pellet(pellet_locations, pellet_idx, pacman_map, start, original_map
     
     # getting a goal
     pellet_idx = 0
-    pellet_goal = get_pellet_node(pellet_locations, 0, pacman_map)
+    pellet_node = get_pellet_node(pellet_locations, 0, pacman_map)
+    lowest_cost = costtogo(pellet_node, start)
     
-    # running dstart to find path and cost of path
-    path_new = astar(start, pellet_goal, pacman_map, original_map)
-    min_cost = calculate_cost(path_new, pacman_map)
+    for idx in range(len(pellet_locations)):
+        pellet_node = get_pellet_node(pellet_locations, idx, pacman_map)
+        new_cost = costtogo(pellet_node, start)
+        if new_cost < lowest_cost:
+            pellet_idx = idx
+            lowest_cost = new_cost
+    return pellet_idx
     
-    # iterating through all pellets to see which path has lowest cost
-    for i in range(1, len(pellet_locations)):
+    # # running dstart to find path and cost of path
+    # path_new = astar(start, pellet_goal, pacman_map, original_map)
+    # min_cost = calculate_cost(path_new, pacman_map)
+    
+    # # iterating through all pellets to see which path has lowest cost
+    # for i in range(1, len(pellet_locations)):
         
-        # finding path to newest pellet
-        pellet_goal = get_pellet_node(pellet_locations, i, pacman_map)
-        path_new = astar(start, pellet_goal, pacman_map, original_map)
+    #     # finding path to newest pellet
+    #     pellet_goal = get_pellet_node(pellet_locations, i, pacman_map)
+    #     path_new = astar(start, pellet_goal, pacman_map, original_map)
         
-        # finding cost of path and comparing
-        new_cost = calculate_cost(path_new, pacman_map)
-        if new_cost < min_cost:
-            min_cost = new_cost
-            pellet_idx = i
+    #     # finding cost of path and comparing
+    #     new_cost = calculate_cost(path_new, pacman_map)
+    #     if new_cost < min_cost:
+    #         min_cost = new_cost
+    #         pellet_idx = i
 
-    return pellet_locations, pellet_idx      
+    # return pellet_locations, pellet_idx      
 
 # getting node of a pellet 
 def get_pellet_node(pellet_locations, pellet_idx, pacman_map):
@@ -312,12 +321,11 @@ def run_a_star(original_map, pacman_map):
                                             pacman_map)
     if curr_pacmamn_pos == pacman_map.pellet_goal:
         if len(pacman_map.pellet_locations) == 1:
-            return False
-        pacman_map.pellet_locations, pacman_map.pellet_idx = get_new_pellet(
+            return None, False
+        pacman_map.pellet_idx = get_new_pellet(
                                         pacman_map.pellet_locations, 
                                         pacman_map.pellet_idx, pacman_map, 
-                                        curr_pacmamn_pos, 
-                                        original_map)
+                                        curr_pacmamn_pos)
         pacman_map.pellet_goal = get_pellet_node(pacman_map.pellet_locations, 
                                         pacman_map.pellet_idx, pacman_map)
     path = astar(curr_pacmamn_pos, pacman_map.pellet_goal, pacman_map, original_map)

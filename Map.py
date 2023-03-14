@@ -299,7 +299,10 @@ class Map:
         x, y = self.pacmanLocation 
         xf, yf = x + dx, y + dy
         if self.isWall((xf, yf)):
-            # Can change
+            prevProbs = self.probabilityMap.get_prob_map()
+            self.probabilityMap.update()
+            newProbs = self.probabilityMap.get_prob_map()
+            self.updateColorsProbability(prevProbs, newProbs)
             return False
         
         else:
@@ -342,9 +345,9 @@ class Map:
 if __name__ == "__main__":
     GHOST_PING_TIME = 4
 
-    m = Map((3, 4), ghostPing=GHOST_PING_TIME)
+    m = Map((5, 4), ghostPing=GHOST_PING_TIME)
     
-    pacman_map = Pacman_Map(m.w, m.h, (3, 4), m.pellet_locations)
+    pacman_map = Pacman_Map(m.w, m.h, (5, 4), m.pellet_locations)
     i = 0
 
     GHOST_UPDATE_TIME = 1
@@ -365,13 +368,10 @@ if __name__ == "__main__":
         if currentTime - lastUpdatePacman > PACMAN_UPADTE_TIME:
             lastUpdatePacman += PACMAN_UPADTE_TIME
             path, go = run_a_star(m, pacman_map)
-            
-            direction = (path[0][0] - m.pacmanLocation[0], path[0][1] - m.pacmanLocation[1])
-
-
             if not go:
                 break 
-            
+            direction = (path[0][0] - m.pacmanLocation[0], path[0][1] - m.pacmanLocation[1])
+
             m.movePacman(direction)
 
             # if kp == ord('w'):

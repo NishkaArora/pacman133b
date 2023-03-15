@@ -160,8 +160,8 @@ class Map:
 
         self.probabilityMap = OccupancyMap(self)
 
-        #self.ghostMaps = [GhostTrueMap(ghost, self.w, self.h, self.wallMap) for ghost in self.ghosts]
-        self.ghostMaps = [GhostMap(ghost, self.w, self.h, self.probabilityMap) for ghost in self.ghosts]
+        self.ghostMaps = [GhostTrueMap(ghost, self.w, self.h, self.wallMap) for ghost in self.ghosts]
+        #self.ghostMaps = [GhostMap(ghost, self.w, self.h, self.probabilityMap) for ghost in self.ghosts]
 
         self.ghostSprite = cv2.flip(cv2.resize(ghostSprite, (SF, SF)), 0)
 
@@ -233,7 +233,7 @@ class Map:
 
         for pellet in self.pellet_locations:
             x, y = pellet
-            self.entityFrame = cv2.circle(self.entityFrame, (int((x + 1/2)*SF), int((y + 1/2)*SF)), int(SF * 0.2), (0, 255, 0), -1)
+            self.entityFrame = cv2.circle(self.entityFrame, (int((x + 1/2)*SF), int((y + 1/2)*SF)), int(SF * 0.2), (255, 255, 0), -1)
         
         self.entityFrame  = self.generatePacman(self.entityFrame)
         self.entityFrame  = self.generateGhosts(self.entityFrame)
@@ -252,7 +252,7 @@ class Map:
 
         for pellet in self.pellet_locations:
             x, y = pellet
-            toReturnImage = cv2.circle(toReturnImage, (int((x + 1/2)*SF), int((y + 1/2)*SF)), int(SF * 0.2), (0, 255, 0), -1)
+            toReturnImage = cv2.circle(toReturnImage, (int((x + 1/2)*SF), int((y + 1/2)*SF)), int(SF * 0.2), (255, 255, 0), -1)
 
         toReturnImage  = self.generatePacman(toReturnImage)
         toReturnImage  = self.generateGhosts(toReturnImage)
@@ -338,6 +338,14 @@ class Map:
     def checkGameComplete(self):
         ghostPositions = [ghost.position for ghost in self.ghosts]
         return self.pacmanLocation in ghostPositions
+    
+    def combinedMap(self):
+        combinedGhostsMap = np.zeros((self.w, self.h))
+
+        for ghost_map in self.ghostMaps:
+            combinedGhostsMap += ghost_map.prob_map
+        
+        return combinedGhostsMap + self.probabilityMap.get_prob_map()
 
 
 if __name__ == "__main__":
@@ -415,7 +423,7 @@ if __name__ == "__main__":
             break
 
         cv2.imshow("Map", m.generateImage())
-        cv2.imshow("Ghost map", m.ghostMaps[0].cv_map) # Ghost Map to Debug
+        #cv2.imshow("Ghost map", m.ghostMaps[0].cv_map) # Ghost Map to Debug
         cv2.imshow("Total Information Map", m.generateTotalImage())
 
         if kp & 0xFF == ord('q'):

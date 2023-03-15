@@ -35,7 +35,7 @@ class GhostTrueMap:
     
     def colorLocation(self, frame, location, prob):
         x, y = location
-        color = (prob*10, prob*10, prob*10)
+        color = (prob*2, prob*2, prob*2)
         return cv2.rectangle(frame, (x*SF, y*SF), ((x+1)*SF, (y+1)*SF), color, -1)
 
     def updatePing(self):

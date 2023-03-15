@@ -154,7 +154,8 @@ def dstar_later(start, goal, pacman_map, original_map, old_map, onDeck, path):
 def process(start, goal, original_map, onDeck):
     
     # getting probability map 
-    prob_map = original_map.probabilityMap.get_prob_map()
+    #prob_map = original_map.probabilityMap.get_prob_map()
+    prob_map = original_map.combinedMap()
     # starting loop
     while len(onDeck) != 0:
         node = onDeck.pop(0)

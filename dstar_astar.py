@@ -317,7 +317,7 @@ def choose_closest_pellet_initial(start, pellet_locations):
             lowest_cost = new_cost
     return pellet_idx
 
-def run_a_star(original_map, pacman_map):
+def run_modified_astar(original_map, pacman_map):
     curr_pacmamn_pos = get_node(original_map.pacmanLocation, 
                                             pacman_map)
     if curr_pacmamn_pos == pacman_map.pellet_goal:

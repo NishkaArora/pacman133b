@@ -8,7 +8,7 @@ from occupancymap import OccupancyMap
 from GhostMap import GhostMap
 from GhostTrueMap import GhostTrueMap
 
-from dstar import Pacman_Map, run_a_star
+from dstar_astar import Pacman_Map, run_modified_astar
 from colour import Color
 
 
@@ -373,7 +373,7 @@ if __name__ == "__main__":
         kp = cv2.waitKey(1)
         if currentTime - lastUpdatePacman > PACMAN_UPADTE_TIME:
             lastUpdatePacman += PACMAN_UPADTE_TIME
-            path, go = run_a_star(m, pacman_map)
+            path, go = run_modified_astar(m, pacman_map)
             if not go:
                 break 
             direction = (path[0][0] - m.pacmanLocation[0], path[0][1] - m.pacmanLocation[1])
@@ -383,28 +383,28 @@ if __name__ == "__main__":
             # if kp == ord('w'):
             #     lastUpdatePacman += PACMAN_UPADTE_TIME
             #     m.movePacman((0, 1))
-            #     path, go = run_a_star(m, pacman_map)
+            #     path, go = run_modified_astar(m, pacman_map)
             #     if not go:
             #         break
 
             # if kp == ord('a'):
             #     lastUpdatePacman += PACMAN_UPADTE_TIME
             #     m.movePacman((-1, 0))
-            #     path, go = run_a_star(m, pacman_map)
+            #     path, go = run_modified_astar(m, pacman_map)
             #     if not go:
             #         break
 
             # if kp == ord('s'):
             #     lastUpdatePacman += PACMAN_UPADTE_TIME
             #     m.movePacman((0, -1))
-            #     path, go = run_a_star(m, pacman_map)
+            #     path, go = run_modified_astar(m, pacman_map)
             #     if not go:
             #         break
 
             # if kp == ord('d'):
             #     lastUpdatePacman += PACMAN_UPADTE_TIME
             #     m.movePacman((1, 0)) 
-            #     path, go = run_a_star(m, pacman_map)
+            #     path, go = run_modified_astar(m, pacman_map)
             #     if not go:
             #         break
         

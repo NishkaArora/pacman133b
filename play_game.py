@@ -1,7 +1,7 @@
 import cv2 
 import numpy as np
 from Map import Map
-from dstar import Pacman_Map, dstar_start, dstar_later, get_new_pellet, get_pellet_node, get_node, choose_closest_pellet
+from dstar_astar import Pacman_Map, dstar_start, dstar_later, get_new_pellet, get_pellet_node, get_node, choose_closest_pellet
 # from astar import astar
 
 # different positions of the pellet

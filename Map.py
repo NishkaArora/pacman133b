@@ -174,6 +174,8 @@ class Map:
 
         self.path = []
         self.pathColor = RED
+        self.old_pacman_position = None
+        self.old_ghost_position = None
 
     def colorGhostMaps(self, entityFrame):
         claimed = np.zeros_like(self.ghostMaps[0].prob_map)
@@ -337,7 +339,19 @@ class Map:
 
     def checkGameComplete(self):
         ghostPositions = [ghost.position for ghost in self.ghosts]
-        return self.pacmanLocation in ghostPositions
+        collision = False
+        if self.old_ghost_position != None:
+            old_ghost_positions = self.old_ghost_position
+            ghost_in_old_pacman_pos = False
+            ghost_in_question = 0
+            for idx in range(len(ghostPositions)):
+                if ghostPositions[idx] == self.old_pacman_position:
+                    ghost_in_old_pacman_pos = True
+                    ghost_in_question = idx
+            if ghost_in_old_pacman_pos:
+                if old_ghost_positions[ghost_in_question] == self.pacmanLocation:
+                    collision = True
+        return self.pacmanLocation in ghostPositions or collision
     
     def combinedMap(self):
         combinedGhostsMap = np.zeros((self.w, self.h))
@@ -351,9 +365,10 @@ class Map:
 if __name__ == "__main__":
     GHOST_PING_TIME = 4
 
-    m = Map((5, 4), ghostPing=GHOST_PING_TIME)
+    pacman_start = (5, 4)# (26, 23)
+    m = Map(pacman_start, ghostPing=GHOST_PING_TIME)
     
-    pacman_map = Pacman_Map(m.w, m.h, (5, 4), m.pellet_locations)
+    pacman_map = Pacman_Map(m.w, m.h, pacman_start, m.pellet_locations)
     i = 0
 
     GHOST_UPDATE_TIME = 1
@@ -367,11 +382,13 @@ if __name__ == "__main__":
     while True:
         currentTime = time.time()
         if currentTime - lastUpdateGhost > GHOST_UPDATE_TIME:
+            m.old_ghost_position = [ghost.position for ghost in m.ghosts]
             lastUpdateGhost += GHOST_UPDATE_TIME
             m.moveGhost()
 
         kp = cv2.waitKey(1)
         if currentTime - lastUpdatePacman > PACMAN_UPADTE_TIME:
+            m.old_pacman_position = m.pacmanLocation
             lastUpdatePacman += PACMAN_UPADTE_TIME
             path, go = run_modified_astar(m, pacman_map)
             if not go:
